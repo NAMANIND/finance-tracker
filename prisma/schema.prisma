@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  AGENT
+}
+
+enum PaymentFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  SKIPPED
+}
+
+enum TransactionCategory {
+  HOME
+  CAR
+  SHOP
+  OFFICE
+  FAMILY
+  PERSONAL
+  INSTALLMENT
+  OTHER
+}
+
+enum TransactionType {
+  EXPENSE
+  INSTALLMENT
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String
+  address   String
+  idProof   String
+  role      UserRole @default(AGENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agent Agent?
+}
+
+model Agent {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  borrowers Borrower[] @relation("AgentBorrowers")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Borrower {
+  id         String   @id @default(cuid())
+  name       String
+  fatherName String
+  phone      String
+  address    String
+  panId      String   @unique
+  agentId    String
+  agent      Agent    @relation("AgentBorrowers", fields: [agentId], references: [id])
+  loans      Loan[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Loan {
+  id              String           @id @default(cuid())
+  borrowerId      String
+  borrower        Borrower         @relation(fields: [borrowerId], references: [id])
+  principalAmount Float
+  interestRate    Float
+  startDate       DateTime
+  duration        Int // in months
+  frequency       PaymentFrequency
+  status          String           @default("ACTIVE")
+  installments    Installment[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Installment {
+  id                String        @id @default(cuid())
+  loanId            String
+  loan              Loan          @relation(fields: [loanId], references: [id])
+  dueDate           DateTime
+  principal         Float
+  interest          Float
+  installmentAmount Float // Amount of principal in this installment
+  amount            Float // Total amount (principal + interest)
+  status            PaymentStatus @default(PENDING)
+  paidAt            DateTime?
+  penalty           Float         @default(0)
+  transactions      Transaction[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model Transaction {
+  id        String              @id @default(cuid())
+  amount    Float
+  type      TransactionType     @default(OTHER)
+  category  TransactionCategory @default(OTHER)
+  notes     String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // Relations
+  installment   Installment? @relation(fields: [installmentId], references: [id])
+  installmentId String?
+
+  @@index([installmentId])
+}
