@@ -61,7 +61,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
@@ -99,9 +99,7 @@ export async function POST(
     const interestPerInstallment = totalInterest / numInstallments;
 
     // Helper to determine transaction amount sign
-    function getTransactionAmount(type: string, amount: number) {
-      if (type === "EXPENSE") return -Math.abs(amount);
-      if (type === "INSTALLMENT") return Math.abs(amount);
+    function getTransactionAmount(amount: number) {
       return amount;
     }
 
@@ -110,7 +108,7 @@ export async function POST(
       // Create loan with installments
       const loan = await tx.loan.create({
         data: {
-          borrowerId: params.id,
+          borrowerId: (await params).id,
           principalAmount: Number(principalAmount),
           interestRate: Number(interestRate),
           duration: Number(termMonths),
@@ -147,7 +145,6 @@ export async function POST(
       await tx.transaction.create({
         data: {
           amount: getTransactionAmount(
-            "EXPENSE",
             Number(principalAmount) *
               (1 - (Number(interestRate) * Number(termMonths)) / 100)
           ),

@@ -12,7 +12,6 @@ export async function GET(
 
     const { id } = await params;
 
-    // Get agent details with user and borrowers information
     const agent = await prisma.agent.findUnique({
       where: { id },
       include: {
@@ -61,13 +60,13 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
     requireAdmin(req);
 
-    const { id } = params;
+    const { id } = await params;
     const data = await req.json();
     const { name, email, phone, address, idProof } = data;
 

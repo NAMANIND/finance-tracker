@@ -1,30 +1,33 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
     // Verify admin access
-    requireAdmin(request as any);
+    requireAdmin(req);
 
     // Get today's date range
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Get today's installments
     const installments = await prisma.installment.findMany({
       where: {
         dueDate: {
           gte: today,
-          lt: tomorrow,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
         },
       },
       include: {
         loan: {
           include: {
-            borrower: true,
+            borrower: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
           },
         },
       },
@@ -50,7 +53,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching today's installments:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch today's installments" },
       { status: 500 }
     );
   }

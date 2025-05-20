@@ -19,7 +19,7 @@ type User = {
 };
 
 // Set auth cookies
-export const setAuthCookies = (token: string, user: any) => {
+export const setAuthCookies = (token: string, user: User) => {
   Cookies.set(TOKEN_COOKIE, token, cookieOptions);
   Cookies.set(USER_COOKIE, JSON.stringify(user), cookieOptions);
 };

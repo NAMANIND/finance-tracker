@@ -45,7 +45,7 @@ export default function ReportsPage() {
     totalInstallments: 0,
     transactions: [],
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState<string>("");
 
@@ -121,6 +121,7 @@ export default function ReportsPage() {
     setEditNotes(currentNotes || "");
   };
   const handleEditSave = async (id: string) => {
+    console.log(id, editNotes);
     // TODO: Implement API call to update notes
     setEditingId(null);
   };
@@ -198,21 +199,29 @@ export default function ReportsPage() {
 
     // Add data with alternating row colors
     stats.transactions.forEach((t, index) => {
+      // Adjust amount based on transaction type
+      let displayAmount = t.amount;
+      if (t.type === "EXPENSE") {
+        displayAmount = -Math.abs(t.amount); // Ensure expenses are negative
+      } else if (t.type === "INSTALLMENT" || t.type === "OTHER") {
+        displayAmount = Math.abs(t.amount); // Ensure installments and other income are positive
+      }
+
       const row = worksheet.addRow({
         date: format(new Date(t.createdAt), "yyyy-MM-dd"),
         type: t.type,
         category: t.category,
-        amount: t.amount,
+        amount: displayAmount,
         notes: t.notes || "",
       });
 
       // Update totals based on transaction type
       if (t.type === "INSTALLMENT") {
-        totalInstallments += t.amount;
+        totalInstallments += Math.abs(t.amount);
       } else if (t.type === "EXPENSE") {
         totalExpenses += Math.abs(t.amount);
       } else if (t.type === "OTHER") {
-        totalOther += t.amount;
+        totalOther += Math.abs(t.amount);
       }
 
       // Style the row
@@ -239,7 +248,7 @@ export default function ReportsPage() {
       const amountCell = row.getCell("amount");
       amountCell.numFmt = '"₹"#,##0.00';
       amountCell.font = {
-        color: { argb: t.amount >= 0 ? "FF008000" : "FFFF0000" },
+        color: { argb: displayAmount >= 0 ? "FF008000" : "FFFF0000" },
       };
     });
 
@@ -479,11 +488,17 @@ export default function ReportsPage() {
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      transaction.amount > 0 ? "text-green-600" : "text-red-600"
+                      transaction.type === "INSTALLMENT" ||
+                      transaction.type === "OTHER"
+                        ? "text-green-600"
+                        : "text-red-600"
                     }`}
                   >
-                    {transaction.amount > 0 ? "+" : "-"}₹
-                    {Math.abs(transaction.amount).toFixed(2)}
+                    {transaction.type === "INSTALLMENT" ||
+                    transaction.type === "OTHER"
+                      ? "+"
+                      : "-"}
+                    ₹{Math.abs(transaction.amount).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {editingId === transaction.id ? (

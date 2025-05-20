@@ -1,6 +1,5 @@
 import { Agent, User, Borrower, Loan } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   UserIcon,
   PhoneIcon,

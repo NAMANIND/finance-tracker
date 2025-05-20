@@ -261,7 +261,7 @@ export default function BorrowersPage() {
                             htmlFor="fatherName"
                             className="block text-sm font-medium text-gray-700"
                           >
-                            Father's name
+                            Father&apos;s name
                           </label>
                           <Input
                             type="text"

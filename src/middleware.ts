@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
       process.env.JWT_SECRET || "your-secret-key"
     );
     const { payload } = await jwtVerify(token, secret);
-    const decoded = payload as JWTPayload;
+    const decoded = payload as unknown as JWTPayload;
 
     // Add user info to request headers
     const requestHeaders = new Headers(request.headers);

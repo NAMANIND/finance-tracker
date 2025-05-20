@@ -6,7 +6,7 @@ import { requireAgent } from "@/lib/auth";
 // POST /api/agent/borrowers/[id]/loans - Create a new loan for a borrower
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const agent = await requireAgent(request);
@@ -19,7 +19,7 @@ export async function POST(
     // Verify borrower belongs to agent
     const borrower = await prisma.borrower.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         agentId: agent.id,
       },
     });
@@ -52,7 +52,7 @@ export async function POST(
     // Create loan with installments
     const loan = await prisma.loan.create({
       data: {
-        borrowerId: params.id,
+        borrowerId: (await params).id,
         principalAmount: Number(principalAmount),
         interestRate: Number(interestRate),
         duration: Number(duration),

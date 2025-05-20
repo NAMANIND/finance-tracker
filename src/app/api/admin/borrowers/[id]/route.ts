@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
 export async function GET(
-  request: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
-    requireAdmin(request as any);
+    requireAdmin(req);
 
     const { id } = await params;
 
@@ -49,9 +49,9 @@ export async function GET(
 
     return NextResponse.json(borrower);
   } catch (error) {
-    console.error("Error fetching borrower details:", error);
+    console.error("Error fetching borrower:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch borrower" },
       { status: 500 }
     );
   }

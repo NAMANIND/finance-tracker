@@ -1,6 +1,6 @@
 import { Borrower, Loan } from "@prisma/client";
 
-type BorrowerWithLoans = Borrower & {
+export type BorrowerWithLoans = Borrower & {
   loans: (Loan & {
     principalAmount: number;
   })[];

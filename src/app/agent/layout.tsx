@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { User } from "@prisma/client";
 
 export default function AgentLayout({
   children,
@@ -10,7 +10,7 @@ export default function AgentLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User>();
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");

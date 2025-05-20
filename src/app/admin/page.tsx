@@ -1,17 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, formatDate } from "date-fns";
-import { TransactionType } from "@prisma/client";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { formatDate } from "date-fns";
+
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,7 +15,6 @@ import {
   Clock,
   UserPlus,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -58,24 +48,6 @@ interface Borrower {
   createdAt: string;
 }
 
-interface NewTransactionForm {
-  loanId: string;
-  installmentId?: string;
-  amount: number;
-  type: TransactionType;
-  category:
-    | "HOME"
-    | "CAR"
-    | "SHOP"
-    | "OFFICE"
-    | "FAMILY"
-    | "PERSONAL"
-    | "OTHER";
-  notes: string;
-  penaltyReason?: string;
-  borrowerId?: string;
-}
-
 interface Installment {
   id: string;
   loanId: string;
@@ -102,28 +74,9 @@ export default function AdminDashboard() {
   const [todayTransactions, setTodayTransactions] = useState<Transaction[]>([]);
   const [todayBorrowers, setTodayBorrowers] = useState<Borrower[]>([]);
   const [todayInstallments, setTodayInstallments] = useState<Installment[]>([]);
-  const [borrowers, setBorrowers] = useState<Borrower[]>([]);
-  const [loans, setLoans] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
-  const [selectedBorrowerInstallments, setSelectedBorrowerInstallments] =
-    useState<Installment[]>([]);
-  const [borrowerSearch, setBorrowerSearch] = useState("");
-  const [filteredBorrowers, setFilteredBorrowers] = useState<Borrower[]>([]);
-  const [transactionMode, setTransactionMode] = useState<
-    "expense" | "borrower"
-  >("expense");
-  const [formData, setFormData] = useState<NewTransactionForm>({
-    loanId: "",
-    installmentId: "",
-    amount: 0,
-    type: TransactionType.EXPENSE,
-    category: "PERSONAL",
-    notes: "",
-    penaltyReason: "",
-    borrowerId: "",
-  });
-  const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState("");
+
   const router = useRouter();
 
   useEffect(() => {
@@ -188,34 +141,6 @@ export default function AdminDashboard() {
         const installmentsData = await installmentsRes.json();
         console.log("Today's installments:", installmentsData);
         setTodayInstallments(installmentsData);
-
-        // Fetch all borrowers for the form
-        const allBorrowersRes = await fetch("/api/admin/borrowers", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!allBorrowersRes.ok) {
-          throw new Error("Failed to fetch all borrowers");
-        }
-
-        const allBorrowersData = await allBorrowersRes.json();
-        setBorrowers(allBorrowersData);
-
-        // Fetch all loans for the form
-        const loansRes = await fetch("/api/admin/loans", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!loansRes.ok) {
-          throw new Error("Failed to fetch loans");
-        }
-
-        const loansData = await loansRes.json();
-        setLoans(loansData);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -225,170 +150,6 @@ export default function AdminDashboard() {
 
     fetchData();
   }, []);
-
-  // Filter borrowers based on search
-  useEffect(() => {
-    if (borrowerSearch.trim() === "") {
-      setFilteredBorrowers(borrowers);
-    } else {
-      const searchLower = borrowerSearch.toLowerCase();
-      const filtered = borrowers.filter(
-        (borrower) =>
-          borrower.name.toLowerCase().includes(searchLower) ||
-          borrower.phone.includes(searchLower) ||
-          borrower.panId.toLowerCase().includes(searchLower)
-      );
-      setFilteredBorrowers(filtered);
-    }
-  }, [borrowerSearch, borrowers]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "amount" ? parseFloat(value) : value,
-    });
-  };
-
-  const handleModeChange = (mode: "expense" | "borrower") => {
-    setTransactionMode(mode);
-    if (mode === "expense") {
-      setFormData((prev) => ({
-        ...prev,
-        type: "OTHER",
-        loanId: "",
-        installmentId: "",
-        penaltyReason: "",
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        type: TransactionType.INSTALLMENT,
-        penaltyReason: "",
-      }));
-    }
-  };
-
-  const handleBorrowerChange = async (borrowerId: string) => {
-    // Reset loan and installment when borrower changes
-    setFormData((prev) => ({
-      ...prev,
-      loanId: "",
-      installmentId: "",
-    }));
-
-    if (!borrowerId) {
-      setSelectedBorrowerInstallments([]);
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-
-      // Fetch installments for the selected borrower
-      const installmentsRes = await fetch(
-        `/api/admin/borrowers/${borrowerId}/installments`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!installmentsRes.ok) {
-        throw new Error("Failed to fetch installments");
-      }
-
-      const installmentsData = await installmentsRes.json();
-      setSelectedBorrowerInstallments(installmentsData);
-
-      // Fetch loans for the selected borrower
-      const loansRes = await fetch(`/api/admin/borrowers/${borrowerId}/loans`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!loansRes.ok) {
-        throw new Error("Failed to fetch loans");
-      }
-
-      const loansData = await loansRes.json();
-
-      // Update the loans state with only the loans for this borrower
-      setLoans(loansData);
-    } catch (error) {
-      console.error("Error fetching borrower data:", error);
-    }
-  };
-
-  const handleInstallmentSelect = (installment: Installment) => {
-    setFormData((prev) => ({
-      ...prev,
-      loanId: installment.loanId,
-      installmentId: installment.id,
-      amount: installment.amount,
-      type: TransactionType.INSTALLMENT,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-    setFormSuccess("");
-
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/admin/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to add transaction");
-      }
-
-      // Reset form
-      setFormData({
-        loanId: "",
-        installmentId: "",
-        amount: 0,
-        type: TransactionType.EXPENSE,
-        category: "PERSONAL",
-        notes: "",
-        penaltyReason: "",
-      });
-
-      setFormSuccess("Transaction added successfully!");
-
-      // Refresh transactions
-      const transactionsRes = await fetch("/api/admin/transactions/today", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!transactionsRes.ok) {
-        throw new Error("Failed to refresh transactions");
-      }
-
-      const transactionsData = await transactionsRes.json();
-      setTodayTransactions(transactionsData);
-    } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "Failed to add transaction"
-      );
-    }
-  };
 
   if (loading) {
     return (

@@ -325,7 +325,7 @@ async function main() {
       txs.push(
         prisma.transaction.create({
           data: {
-            amount: -loanData.principalAmount,
+            amount: loanData.principalAmount,
             type: TransactionType.EXPENSE,
             category: TransactionCategory.OTHER,
             notes: `Loan disbursement for ${borrower.name}`,
@@ -342,7 +342,7 @@ async function main() {
   txs.push(
     prisma.transaction.create({
       data: {
-        amount: -1200,
+        amount: 1200,
         type: TransactionType.EXPENSE,
         category: TransactionCategory.OFFICE,
         notes: "Test Office Supplies",
@@ -351,7 +351,7 @@ async function main() {
     }),
     prisma.transaction.create({
       data: {
-        amount: -3500,
+        amount: 3500,
         type: TransactionType.EXPENSE,
         category: TransactionCategory.CAR,
         notes: "Test Car Repair",
@@ -396,7 +396,7 @@ async function main() {
     txs.push(
       prisma.transaction.create({
         data: {
-          amount: -1000 * (i + 1),
+          amount: 1000 * (i + 1),
           type: TransactionType.EXPENSE,
           category: TransactionCategory.PERSONAL,
           notes: `Standalone Expense for ${expenseDate.toLocaleString(

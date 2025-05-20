@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAgent } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // Verify agent access
-    const user = requireAgent(request as any);
+    const user = requireAgent(request as NextRequest);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

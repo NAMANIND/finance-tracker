@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { use } from "react";
+import { useParams } from "next/navigation";
+
 import {
   UserIcon,
   CreditCardIcon,
@@ -53,6 +53,7 @@ interface Borrower {
     };
   };
   loans: Loan[];
+  activeLoans: number;
 }
 
 interface InstallmentDetails {
@@ -69,13 +70,9 @@ interface InstallmentDetails {
   }[];
 }
 
-export default function BorrowerDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const router = useRouter();
-  const { id } = use(params);
+export default function BorrowerDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [borrower, setBorrower] = useState<Borrower | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("loans");
@@ -420,7 +417,7 @@ export default function BorrowerDetailsPage({
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-gray-500">Father's Name</p>
+                    <p className="text-sm text-gray-500">Father&apos;s Name</p>
                     <p className="text-base font-medium text-gray-900">
                       {borrower.fatherName}
                     </p>

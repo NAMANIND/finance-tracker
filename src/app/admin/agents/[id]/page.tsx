@@ -1,22 +1,18 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { notFound, useRouter, useParams } from "next/navigation";
-import AgentDetails from "./AgentDetails";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { AgentWithDetails } from "./types";
 import {
   MagnifyingGlassIcon,
   PlusCircleIcon,
   UserIcon,
   PhoneIcon,
-  IdentificationIcon,
   UserGroupIcon,
   CreditCardIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import Link from "next/link";
 import { Input } from "@/components/ui/input";
 
 interface Borrower {

@@ -59,9 +59,7 @@ export default function AgentDashboard() {
     "collections"
   );
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
-  const [selectedDue, setSelectedDue] = useState<
-    AgentStats["duesToday"][0] | null
-  >(null);
+
   const [formData, setFormData] = useState<CollectionFormData>({
     amount: "",
     penaltyAmount: "",
@@ -123,7 +121,6 @@ export default function AgentDashboard() {
   }, [activeTab]);
 
   const handleCollectClick = (due: AgentStats["duesToday"][0]) => {
-    setSelectedDue(due);
     setFormData({
       amount: due.amount.toString(),
       penaltyAmount: "",
@@ -226,7 +223,7 @@ export default function AgentDashboard() {
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
             }`}
           >
-            Today's Collections
+            Today&apos;s Collections
           </button>
           <button
             onClick={() => setActiveTab("clients")}
@@ -286,9 +283,9 @@ export default function AgentDashboard() {
                       </div> */}
                       <button
                         onClick={() => handleCollectClick(due)}
-                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500  focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                       >
-                        Collect Payment
+                        Collect Payment of {due.borrower.name}
                       </button>
                     </div>
                   </div>

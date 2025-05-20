@@ -9,6 +9,7 @@ import {
   DocumentChartBarIcon,
   ArrowRightOnRectangleIcon,
   BanknotesIcon,
+  WalletIcon,
 } from "@heroicons/react/24/outline";
 
 export default function AdminLayout({
@@ -74,8 +75,12 @@ export default function AdminLayout({
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="hidden w-64 flex-col bg-white shadow-md md:flex">
-        <div className="flex h-16 items-center justify-center border-b border-gray-200">
-          <h1 className="text-xl font-bold text-indigo-600">Finance Tracker</h1>
+        <div className="flex h-16 items-center pl-4 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-indigo-600 flex items-center">
+            {/* icon for finance tracker */}
+            <WalletIcon className="mr-2 h-5 w-5" />
+            Finance Tracker
+          </h1>
         </div>
         <nav className="flex-1 space-y-1 px-2 py-4">
           {navigation.map((item) => {

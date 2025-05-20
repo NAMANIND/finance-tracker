@@ -5,7 +5,7 @@ import { TransactionCategory, TransactionType } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { installmentId: string } }
+  { params }: { params: Promise<{ installmentId: string }> }
 ) {
   try {
     const user = await requireAgent(req);
@@ -15,7 +15,7 @@ export async function POST(
       });
     }
 
-    const { installmentId } = params;
+    const { installmentId } = await params;
     const { amount, penaltyAmount, extraAmount, notes } = await req.json();
 
     // Validate required fields

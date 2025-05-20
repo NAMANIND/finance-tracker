@@ -14,6 +14,9 @@ async function main() {
       name: "Admin User",
       password: hashedPassword,
       role: "ADMIN",
+      phone: "1234567890",
+      address: "123 Main St, Anytown, USA",
+      idProof: "1234567890",
     },
   });
 

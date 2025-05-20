@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { getAuthCookies } from "@/lib/cookies";
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,10 +56,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Verify admin access
-    requireAdmin(request as any);
+    requireAdmin(request as NextRequest);
 
     const data = await request.json();
     const { name, fatherName, phone, address, panId, agentId } = data;

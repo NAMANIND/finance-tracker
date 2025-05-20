@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { TransactionType } from "@prisma/client";
+import { TransactionType, Loan } from "@prisma/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,13 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ArrowLeft,
-  PlusCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -78,10 +72,9 @@ interface NewTransactionForm {
 }
 
 export default function TransactionsPage() {
-  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
-  const [loans, setLoans] = useState<any[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBorrowerInstallments, setSelectedBorrowerInstallments] =
     useState<Installment[]>([]);
@@ -323,7 +316,7 @@ export default function TransactionsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Today's Transactions */}
-        <Card className="p-6">
+        <Card className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           <div className="mb-4 flex items-center gap-2">
             <h2 className="text-lg font-medium text-gray-900">
               Today&apos;s Transactions
@@ -384,7 +377,7 @@ export default function TransactionsPage() {
         </Card>
 
         {/* Add Transaction Form */}
-        <Card className="p-6">
+        <Card className="p-6 h-fit">
           <h2 className="mb-6 text-lg font-medium text-gray-900">
             Add New Transaction
           </h2>

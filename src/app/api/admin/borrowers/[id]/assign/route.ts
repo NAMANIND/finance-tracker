@@ -4,13 +4,13 @@ import { requireAdmin } from "@/lib/auth";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
     requireAdmin(req);
 
-    const { id } = params;
+    const { id } = await params;
     const { agentId } = await req.json();
 
     if (!agentId) {
