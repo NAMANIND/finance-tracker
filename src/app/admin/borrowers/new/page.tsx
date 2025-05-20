@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   IdentificationIcon,
 } from "@heroicons/react/24/outline";
+import { Input } from "@/components/ui/input";
 
 interface Borrower {
   id: string;
@@ -115,7 +116,7 @@ export default function NewBorrowerPage() {
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
         </div>
-        <input
+        <Input
           type="text"
           placeholder="Search borrowers by name, phone, or PAN ID..."
           value={searchTerm}

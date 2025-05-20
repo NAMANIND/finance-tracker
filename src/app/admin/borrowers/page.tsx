@@ -13,6 +13,15 @@ import {
   CreditCardIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Borrower {
   id: string;
@@ -172,7 +181,7 @@ export default function BorrowersPage() {
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
             </div>
-            <input
+            <Input
               type="text"
               placeholder="Search borrowers..."
               value={searchTerm}
@@ -235,7 +244,7 @@ export default function BorrowersPage() {
                           >
                             Full name
                           </label>
-                          <input
+                          <Input
                             type="text"
                             name="name"
                             id="name"
@@ -243,7 +252,6 @@ export default function BorrowersPage() {
                             onChange={(e) =>
                               setFormData({ ...formData, name: e.target.value })
                             }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                           />
                         </div>
@@ -255,7 +263,7 @@ export default function BorrowersPage() {
                           >
                             Father's name
                           </label>
-                          <input
+                          <Input
                             type="text"
                             name="fatherName"
                             id="fatherName"
@@ -266,7 +274,6 @@ export default function BorrowersPage() {
                                 fatherName: e.target.value,
                               })
                             }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                           />
                         </div>
@@ -278,7 +285,7 @@ export default function BorrowersPage() {
                           >
                             Phone number
                           </label>
-                          <input
+                          <Input
                             type="tel"
                             name="phone"
                             id="phone"
@@ -289,7 +296,6 @@ export default function BorrowersPage() {
                                 phone: e.target.value,
                               })
                             }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                           />
                         </div>
@@ -301,7 +307,7 @@ export default function BorrowersPage() {
                           >
                             PAN ID
                           </label>
-                          <input
+                          <Input
                             type="text"
                             name="panId"
                             id="panId"
@@ -312,7 +318,6 @@ export default function BorrowersPage() {
                                 panId: e.target.value,
                               })
                             }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                           />
                         </div>
@@ -324,7 +329,7 @@ export default function BorrowersPage() {
                           >
                             Address
                           </label>
-                          <textarea
+                          <Textarea
                             name="address"
                             id="address"
                             value={formData.address}
@@ -347,26 +352,26 @@ export default function BorrowersPage() {
                           >
                             Assign Agent
                           </label>
-                          <select
-                            id="agentId"
-                            name="agentId"
+                          <Select
                             value={formData.agentId}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               setFormData({
                                 ...formData,
-                                agentId: e.target.value,
+                                agentId: value,
                               })
                             }
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            required
                           >
-                            <option value="">Select an agent</option>
-                            {agents.map((agent) => (
-                              <option key={agent.id} value={agent.id}>
-                                {agent.user.name}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select an agent" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {agents.map((agent) => (
+                                <SelectItem key={agent.id} value={agent.id}>
+                                  {agent.user.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 

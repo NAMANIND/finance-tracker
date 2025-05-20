@@ -1,8 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, formatDate } from "date-fns";
 import { TransactionType } from "@prisma/client";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  ChevronDown,
+  Wallet,
+  AlertCircle,
+  Clock,
+  UserPlus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+
 interface DashboardStats {
   totalLoans: number;
   totalBorrowers: number;
@@ -60,6 +87,7 @@ interface Installment {
   status: "PENDING" | "PAID" | "OVERDUE";
   borrowerName?: string;
   borrowerPhone?: string;
+  borrowerId: string;
 }
 
 export default function AdminDashboard() {
@@ -96,6 +124,7 @@ export default function AdminDashboard() {
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,6 +171,7 @@ export default function AdminDashboard() {
         }
 
         const borrowersData = await borrowersRes.json();
+        console.log("Today's borrowers:", borrowersData);
         setTodayBorrowers(borrowersData);
 
         // Fetch today's installments
@@ -156,6 +186,7 @@ export default function AdminDashboard() {
         }
 
         const installmentsData = await installmentsRes.json();
+        console.log("Today's installments:", installmentsData);
         setTodayInstallments(installmentsData);
 
         // Fetch all borrowers for the form
@@ -368,10 +399,25 @@ export default function AdminDashboard() {
       </div>
     );
   }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
+  };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <Button
+          onClick={() => router.push("/admin/transactions")}
+          className="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 gap-2"
+        >
+          <PlusCircle className="h-5 w-5" />
+          <span>Add Transaction</span>
+        </Button>
+      </div>
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -422,106 +468,175 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Today's Installments */}
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Today&apos;s Installments
-              </h2>
-              <div className="mt-4">
-                {todayInstallments.length === 0 ? (
-                  <p className="text-gray-500">No installments due today.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Borrower
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Amount
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Today&apos;s Installments
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+                      {todayInstallments.length}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-0">
+                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {todayInstallments.length === 0 ? (
+                      <p className="text-gray-500">
+                        No installments due today.
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
                         {todayInstallments.map((installment) => (
-                          <tr key={installment.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {installment.borrowerName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              ₹{installment.amount.toLocaleString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  installment.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-green-100 text-green-800"
+                          <div
+                            key={installment.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                                  installment.status === "PAID"
+                                    ? "bg-green-100"
+                                    : installment.status === "OVERDUE"
+                                    ? "bg-red-100"
+                                    : "bg-yellow-100"
                                 }`}
                               >
+                                {installment.status === "PAID" ? (
+                                  <Wallet className="h-5 w-5 text-green-600" />
+                                ) : installment.status === "OVERDUE" ? (
+                                  <AlertCircle className="h-5 w-5 text-red-600" />
+                                ) : (
+                                  <Clock className="h-5 w-5 text-yellow-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {installment.borrowerName}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {formatDate(
+                                    installment.dueDate,
+                                    "dd MMM yyyy"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p
+                                className={`font-medium ${
+                                  installment.status === "PAID"
+                                    ? "text-green-600"
+                                    : installment.status === "OVERDUE"
+                                    ? "text-red-600"
+                                    : "text-yellow-600"
+                                }`}
+                              >
+                                {formatCurrency(installment.amount)}
+                              </p>
+                              <p className="text-sm text-gray-500">
                                 {installment.status}
-                              </span>
-                            </td>
-                          </tr>
+                              </p>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           {/* Today's Transactions */}
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Today&apos;s Transactions
-              </h2>
-              <div className="mt-4">
-                {todayTransactions.length === 0 ? (
-                  <p className="text-gray-500">
-                    No transactions recorded today
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Borrower
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Type
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Amount
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {todayTransactions.map((transaction) => (
-                          <tr key={transaction.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {transaction.borrowerName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {transaction.type}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              ₹{transaction.amount.toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Today&apos;s Transactions
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+                      {todayTransactions.length}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
+                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-0">
+                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {todayTransactions.length === 0 ? (
+                      <p className="text-gray-500">
+                        No transactions recorded today
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        {todayTransactions.map((transaction) => (
+                          <div
+                            key={transaction.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4 mb-4"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                                  transaction.type === "EXPENSE"
+                                    ? "bg-red-100"
+                                    : transaction.type === "INSTALLMENT"
+                                    ? "bg-green-100"
+                                    : "bg-green-100"
+                                }`}
+                              >
+                                {transaction.type === "EXPENSE" ? (
+                                  <ArrowDownRight className="h-5 w-5 text-red-600" />
+                                ) : transaction.type === "INSTALLMENT" ? (
+                                  <Wallet className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <ArrowUpRight className="h-5 w-5 text-green-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {transaction.borrowerName || transaction.type}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {formatDate(
+                                    transaction.createdAt,
+                                    "dd MMM yyyy"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p
+                                className={`font-medium ${
+                                  transaction.type === "EXPENSE"
+                                    ? "text-red-600"
+                                    : transaction.type === "INSTALLMENT"
+                                    ? "text-green-600"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                {transaction.type === "EXPENSE" ? "-" : "+"}
+                                {formatCurrency(transaction.amount)}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {transaction.type}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </div>
 
@@ -529,375 +644,133 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Today's New Borrowers */}
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Today&apos;s New Borrowers
-              </h2>
-              <div className="mt-4">
-                {todayBorrowers.length === 0 ? (
-                  <p className="text-gray-500">
-                    No new borrowers registered today
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Phone
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            PAN ID
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {todayBorrowers.map((borrower) => (
-                          <tr key={borrower.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {borrower.name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {borrower.phone}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {borrower.panId}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Today&apos;s New Borrowers
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+                      {todayBorrowers.length}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
+                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-0">
+                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {todayBorrowers.length === 0 ? (
+                      <p className="text-gray-500">
+                        No new borrowers registered today
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {todayBorrowers.map((borrower) => (
+                          <div
+                            key={borrower.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                                <UserPlus className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {borrower.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {borrower.phone}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-blue-600">
+                                New Borrower
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {formatDate(borrower.createdAt, "dd MMM yyyy")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           {/* Additional Stats */}
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Additional Stats
-              </h2>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Upcoming Dues
-                  </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900">
-                    {stats.upcomingDues}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Defaulters
-                  </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900">
-                    {stats.defaulters}
-                  </dd>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Transaction Form */}
-      <div className="overflow-hidden rounded-lg bg-white shadow">
-        <div className="p-6">
-          <h2 className="text-lg font-medium text-gray-900">
-            Add New Transaction
-          </h2>
-
-          {/* Transaction Mode Selection */}
-          <div className="flex space-x-4 mb-6">
-            <button
-              type="button"
-              onClick={() => handleModeChange("expense")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-                transactionMode === "expense"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Add Expense
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange("borrower")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-                transactionMode === "borrower"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Borrower Payment
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Category Selection - Only show for expense mode */}
-              {transactionMode === "expense" && (
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    required
-                  >
-                    <option value="HOME">Home</option>
-                    <option value="CAR">Car</option>
-                    <option value="SHOP">Shop</option>
-                    <option value="OFFICE">Office</option>
-                    <option value="FAMILY">Family</option>
-                    <option value="PERSONAL">Personal</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Borrower Section - Only show if in borrower mode */}
-              {transactionMode === "borrower" && (
-                <div className="space-y-4 sm:col-span-2">
-                  <div>
-                    <label
-                      htmlFor="borrowerSearch"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Search Borrower
-                    </label>
-                    <div className="mt-1 relative">
-                      <input
-                        type="text"
-                        id="borrowerSearch"
-                        value={borrowerSearch}
-                        onChange={(e) => setBorrowerSearch(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder="Search by name, phone, or PAN ID"
-                      />
-                    </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Defaulters
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                      {stats.defaulters}
+                    </span>
                   </div>
-
-                  <div>
-                    <label
-                      htmlFor="borrowerSelect"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Select Borrower
-                    </label>
-                    <select
-                      id="borrowerSelect"
-                      value={
-                        formData.loanId
-                          ? loans.find((l) => l.id === formData.loanId)
-                              ?.borrowerId || ""
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const borrowerId = e.target.value;
-                        if (borrowerId) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            borrowerId: borrowerId,
-                          }));
-                          handleBorrowerChange(borrowerId);
-                        } else {
-                          setSelectedBorrowerInstallments([]);
-                          setFormData((prev) => ({
-                            ...prev,
-                            loanId: "",
-                            installmentId: "",
-                          }));
-                        }
-                      }}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      required={transactionMode === "borrower"}
-                    >
-                      <option value="">Select a borrower</option>
-                      {filteredBorrowers.map((borrower) => (
-                        <option key={borrower.id} value={borrower.id}>
-                          {borrower.name} - {borrower.phone} - {borrower.panId}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {selectedBorrowerInstallments.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Pending Installments
-                      </label>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {selectedBorrowerInstallments.map((installment) => (
-                          <button
-                            key={installment.id}
-                            type="button"
-                            onClick={() => handleInstallmentSelect(installment)}
-                            className={`p-3 text-left rounded-lg border ${
-                              formData.installmentId === installment.id
-                                ? "border-indigo-500 bg-indigo-50"
-                                : "border-gray-200 hover:border-indigo-300"
-                            }`}
-                          >
-                            <div className="font-medium">
-                              ₹{installment?.amount?.toLocaleString() || "0"}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Due:{" "}
-                              {new Date(
-                                installment.dueDate
-                              ).toLocaleDateString()}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Principal: ₹
-                              {installment.principal.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Interest: ₹{installment.interest.toLocaleString()}
-                            </div>
+                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-0">
+                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {todayInstallments.filter(
+                      (installment) => installment.status === "OVERDUE"
+                    ).length === 0 ? (
+                      <p className="text-gray-500">No defaulters found.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {todayInstallments
+                          .filter(
+                            (installment) => installment.status === "OVERDUE"
+                          )
+                          .map((installment) => (
                             <div
-                              className={`mt-1 text-xs font-medium ${
-                                installment.status === "OVERDUE"
-                                  ? "text-red-600"
-                                  : "text-yellow-600"
-                              }`}
+                              key={installment.id}
+                              className="flex items-center justify-between rounded-lg border border-red-100 bg-red-50 p-4"
                             >
-                              {installment.status}
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {installment.borrowerName}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Due:{" "}
+                                  {new Date(
+                                    installment.dueDate
+                                  ).toLocaleDateString()}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Amount: ₹{installment.amount.toLocaleString()}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  router.push(
+                                    `/admin/borrowers/${installment.borrowerId}`
+                                  )
+                                }
+                              >
+                                View Details
+                              </Button>
                             </div>
-                          </button>
-                        ))}
+                          ))}
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Transaction Type - Only show if in borrower mode */}
-              {transactionMode === "borrower" && (
-                <div>
-                  <label
-                    htmlFor="type"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Transaction Type
-                  </label>
-                  <select
-                    id="type"
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    required
-                  >
-                    <option value="EXPENSE">Expense</option>
-                    <option value="INSTALLMENT">Installment</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Penalty Reason - Only show if penalty type is selected */}
-              {transactionMode === "borrower" &&
-                formData.type === "INSTALLMENT" && (
-                  <div>
-                    <label
-                      htmlFor="penaltyReason"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Penalty Reason
-                    </label>
-                    <input
-                      type="text"
-                      id="penaltyReason"
-                      name="penaltyReason"
-                      value={formData.penaltyReason}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      placeholder="Enter reason for penalty"
-                      required
-                    />
+                    )}
                   </div>
-                )}
-
-              {/* Amount Input */}
-              <div>
-                <label
-                  htmlFor="amount"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Amount
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">₹</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="amount"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleInputChange}
-                    className="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
                 </div>
-              </div>
-
-              {/* Notes */}
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="notes"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Add any additional notes about this transaction"
-                />
-              </div>
-            </div>
-
-            {formError && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{formError}</div>
-              </div>
-            )}
-
-            {formSuccess && (
-              <div className="rounded-md bg-green-50 p-4">
-                <div className="text-sm text-green-700">{formSuccess}</div>
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                Add Transaction
-              </button>
-            </div>
-          </form>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </div>
       </div>
     </div>

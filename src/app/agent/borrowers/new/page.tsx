@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function NewBorrower() {
   const router = useRouter();
@@ -78,7 +80,7 @@ export default function NewBorrower() {
               Person&apos;s Name
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="text"
                 name="name"
                 id="name"
@@ -96,7 +98,7 @@ export default function NewBorrower() {
               Father&apos;s Name
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="text"
                 name="fatherName"
                 id="fatherName"
@@ -114,7 +116,7 @@ export default function NewBorrower() {
               Phone Number
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="tel"
                 name="phone"
                 id="phone"
@@ -133,7 +135,7 @@ export default function NewBorrower() {
               Address
             </label>
             <div className="mt-1">
-              <textarea
+              <Textarea
                 name="address"
                 id="address"
                 rows={3}
@@ -151,7 +153,7 @@ export default function NewBorrower() {
               PAN ID
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="text"
                 name="panId"
                 id="panId"

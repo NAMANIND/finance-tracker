@@ -6,6 +6,9 @@ export async function GET(request: Request) {
   try {
     // Verify agent access
     const user = requireAgent(request as any);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Get agent details
     const agent = await prisma.agent.findUnique({
@@ -13,13 +16,18 @@ export async function GET(request: Request) {
     });
 
     if (!agent) {
+      console.error("Agent not found for user:", user.id);
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
+
+    console.log("Fetching stats for agent:", agent.id);
 
     // Get total borrowers
     const totalBorrowers = await prisma.borrower.count({
       where: { agentId: agent.id },
     });
+
+    console.log("Total borrowers:", totalBorrowers);
 
     // Get total active loans
     const totalActiveLoans = await prisma.loan.count({
@@ -28,6 +36,8 @@ export async function GET(request: Request) {
         status: "ACTIVE",
       },
     });
+
+    console.log("Total active loans:", totalActiveLoans);
 
     // Get today's collections
     const today = new Date();
@@ -120,6 +130,8 @@ export async function GET(request: Request) {
         },
       },
     });
+
+    console.log("Dues today:", duesToday.length);
 
     return NextResponse.json({
       totalBorrowers,

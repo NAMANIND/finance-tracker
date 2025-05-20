@@ -1,7 +1,10 @@
 import { Agent, User, Borrower, Loan } from "@prisma/client";
 
 export type AgentWithDetails = Agent & {
-  user: User;
+  user: User & {
+    idProof: string;
+    address: string;
+  };
   isActive: boolean;
   commissionRate: number;
   borrowers: (Borrower & {

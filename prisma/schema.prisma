@@ -39,12 +39,14 @@ enum TransactionCategory {
   FAMILY
   PERSONAL
   INSTALLMENT
+  INCOME
   OTHER
 }
 
 enum TransactionType {
   EXPENSE
   INSTALLMENT
+  INCOME
   OTHER
 }
 
@@ -117,6 +119,8 @@ model Installment {
   transactions      Transaction[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
+  extraAmount       Float         @default(0)
+  penaltyAmount     Float         @default(0)
 }
 
 model Transaction {

@@ -14,6 +14,14 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@heroicons/react/24/outline";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Loan {
   id: string;
@@ -134,7 +142,12 @@ export default function BorrowerDetailsPage({
 
     // Calculate number of installments based on frequency
     const isWeekly = formData.repaymentFrequency === "WEEKLY";
-    const numberOfInstallments = isWeekly ? durationMonths * 4 : durationMonths; // 4 weeks per month for weekly
+    const isDaily = formData.repaymentFrequency === "DAILY";
+    const numberOfInstallments = isDaily
+      ? durationMonths * 30 // 30 days per month for daily
+      : isWeekly
+      ? durationMonths * 4 // 4 weeks per month for weekly
+      : durationMonths; // monthly
 
     // Calculate monthly interest rate
     const monthlyInterestRate = interestRate / 100;
@@ -154,7 +167,9 @@ export default function BorrowerDetailsPage({
 
     for (let i = 0; i < numberOfInstallments; i++) {
       const dueDate = new Date(startDate);
-      if (isWeekly) {
+      if (isDaily) {
+        dueDate.setDate(dueDate.getDate() + i + 1); // Add 1 day for daily
+      } else if (isWeekly) {
         dueDate.setDate(dueDate.getDate() + i * 7); // Add 7 days for weekly
       } else {
         dueDate.setMonth(dueDate.getMonth() + i + 1); // Add months for monthly
@@ -169,13 +184,13 @@ export default function BorrowerDetailsPage({
       // Our Principal Amount is the amount given
 
       // Total installment amount
-      const amount = principalPayment + interest;
+      const amount = principalPayment;
       const installmentAmount = principalPayment;
 
       installments.push({
         dueDate: dueDate.toISOString().split("T")[0],
         amount: amount,
-        principal: principalPayment,
+        principal: principalPayment - interest,
         interest: interest,
         installmentAmount: installmentAmount,
       });
@@ -607,7 +622,7 @@ export default function BorrowerDetailsPage({
                       Principal Amount
                     </label>
                     <div className="mt-1">
-                      <input
+                      <Input
                         type="number"
                         id="principalAmount"
                         name="principalAmount"
@@ -626,7 +641,7 @@ export default function BorrowerDetailsPage({
                       Interest Rate (%)
                     </label>
                     <div className="mt-1">
-                      <input
+                      <Input
                         type="number"
                         id="interestRate"
                         name="interestRate"
@@ -645,7 +660,7 @@ export default function BorrowerDetailsPage({
                       Start Date
                     </label>
                     <div className="mt-1">
-                      <input
+                      <Input
                         type="date"
                         id="startDate"
                         name="startDate"
@@ -664,19 +679,25 @@ export default function BorrowerDetailsPage({
                       Loan Duration (months)
                     </label>
                     <div className="mt-1">
-                      <select
-                        id="loanDurationMonths"
-                        name="loanDurationMonths"
+                      <Select
                         value={formData.loanDurationMonths}
-                        onChange={handleInputChange}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        required
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            loanDurationMonths: value,
+                          })
+                        }
                       >
-                        <option value="3">3 months</option>
-                        <option value="4">4 months</option>
-                        <option value="6">6 months</option>
-                        <option value="12">12 months</option>
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 months</SelectItem>
+                          <SelectItem value="4">4 months</SelectItem>
+                          <SelectItem value="6">6 months</SelectItem>
+                          <SelectItem value="12">12 months</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div>
@@ -687,17 +708,24 @@ export default function BorrowerDetailsPage({
                       Repayment Frequency
                     </label>
                     <div className="mt-1">
-                      <select
-                        id="repaymentFrequency"
-                        name="repaymentFrequency"
+                      <Select
                         value={formData.repaymentFrequency}
-                        onChange={handleInputChange}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        required
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            repaymentFrequency: value,
+                          })
+                        }
                       >
-                        <option value="MONTHLY">Monthly</option>
-                        <option value="WEEKLY">Weekly</option>
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MONTHLY">Monthly</SelectItem>
+                          <SelectItem value="WEEKLY">Weekly</SelectItem>
+                          <SelectItem value="DAILY">Daily</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

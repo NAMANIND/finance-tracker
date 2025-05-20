@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setAuthCookies } from "@/lib/cookies";
+import { Input } from "@/components/ui/input";
 
 export default function Login() {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function Login() {
               <label htmlFor="email" className="sr-only">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -94,7 +95,7 @@ export default function Login() {
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -110,7 +111,7 @@ export default function Login() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input
+              <Input
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"

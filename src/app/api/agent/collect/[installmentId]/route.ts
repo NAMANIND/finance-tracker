@@ -8,18 +8,21 @@ export async function POST(
   { params }: { params: { installmentId: string } }
 ) {
   try {
-    // Verify agent access
-    const agent = requireAgent(req);
+    const user = await requireAgent(req);
+    if (!user) {
+      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
+    }
 
     const { installmentId } = params;
-    const { amount, notes } = await req.json();
+    const { amount, penaltyAmount, extraAmount, notes } = await req.json();
 
     // Validate required fields
     if (!amount) {
-      return NextResponse.json(
-        { error: "Amount is required" },
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: "Amount is required" }), {
+        status: 400,
+      });
     }
 
     // Get the installment
@@ -28,49 +31,61 @@ export async function POST(
       include: {
         loan: {
           include: {
-            borrower: true,
+            borrower: {
+              include: {
+                agent: true,
+              },
+            },
           },
         },
       },
     });
 
     if (!installment) {
-      return NextResponse.json(
-        { error: "Installment not found" },
+      return new NextResponse(
+        JSON.stringify({ error: "Installment not found" }),
         { status: 404 }
       );
     }
 
-    // Check if the agent is assigned to the borrower
-    if (installment.loan.borrower.agentId !== agent.id) {
-      return NextResponse.json(
-        { error: "You are not authorized to collect this installment" },
-        { status: 403 }
-      );
+    // Verify agent has access to this borrower
+    if (installment.loan.borrower.agent.userId !== user.id) {
+      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+      });
     }
+
+    // Calculate total amount including penalty and extra
+    const totalAmount =
+      Number(amount) +
+      (penaltyAmount ? Number(penaltyAmount) : 0) +
+      (extraAmount ? Number(extraAmount) : 0);
 
     // Create transaction
     const transaction = await prisma.transaction.create({
       data: {
-        amount,
-        type: TransactionType.EXPENSE,
-        category: TransactionCategory.PERSONAL,
-        notes,
-        installmentId,
+        amount: totalAmount,
+        type: TransactionType.INSTALLMENT,
+        category: TransactionCategory.INSTALLMENT,
+        notes: notes || undefined,
+        installmentId: installment.id,
       },
     });
 
     // Update installment status
     await prisma.installment.update({
-      where: { id: installmentId },
-      data: { status: "PAID" },
+      where: { id: installment.id },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+      },
     });
 
     return NextResponse.json(transaction);
   } catch (error) {
-    console.error("Error collecting installment:", error);
-    return NextResponse.json(
-      { error: "Failed to collect installment" },
+    console.error("Error collecting payment:", error);
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
     );
   }

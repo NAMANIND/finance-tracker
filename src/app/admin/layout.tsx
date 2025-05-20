@@ -8,6 +8,7 @@ import {
   UserIcon,
   DocumentChartBarIcon,
   ArrowRightOnRectangleIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 
 export default function AdminLayout({
@@ -46,6 +47,11 @@ export default function AdminLayout({
       name: "Dashboard",
       href: "/admin",
       icon: ChartBarIcon,
+    },
+    {
+      name: "Transactions",
+      href: "/admin/transactions",
+      icon: BanknotesIcon,
     },
     {
       name: "Borrowers",

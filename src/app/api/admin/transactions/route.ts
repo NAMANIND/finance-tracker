@@ -16,12 +16,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate transaction type
+    const validTypes = Object.values(TransactionType);
+    if (!validTypes.includes(type as TransactionType)) {
+      return NextResponse.json(
+        {
+          error: `Invalid transaction type. Must be one of: ${validTypes.join(
+            ", "
+          )}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Create the transaction
     const transaction = await prisma.transaction.create({
       data: {
-        amount,
+        amount: Number(amount),
         type: type as TransactionType,
-        category: category as TransactionCategory,
+        category: (category ||
+          TransactionCategory.OTHER) as TransactionCategory,
         notes: notes || undefined,
         installmentId: installmentId || undefined,
       },

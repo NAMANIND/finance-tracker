@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { Input } from "@/components/ui/input";
 
 export default function NewLoan() {
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function NewLoan() {
               Principal Amount (₹)
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="number"
                 name="principalAmount"
                 id="principalAmount"
@@ -96,7 +97,7 @@ export default function NewLoan() {
               Interest Rate (%)
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="number"
                 name="interestRate"
                 id="interestRate"
@@ -117,7 +118,7 @@ export default function NewLoan() {
               Duration (months)
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="number"
                 name="duration"
                 id="duration"
@@ -137,7 +138,7 @@ export default function NewLoan() {
               Start Date
             </label>
             <div className="mt-1">
-              <input
+              <Input
                 type="date"
                 name="startDate"
                 id="startDate"

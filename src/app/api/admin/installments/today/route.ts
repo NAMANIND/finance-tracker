@@ -20,7 +20,6 @@ export async function GET(request: Request) {
           gte: today,
           lt: tomorrow,
         },
-        status: "PENDING",
       },
       include: {
         loan: {

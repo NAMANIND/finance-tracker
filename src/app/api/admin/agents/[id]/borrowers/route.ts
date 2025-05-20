@@ -58,33 +58,49 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify admin access
     requireAdmin(req);
 
-    const { id } = params;
-    const data = await req.json();
-    const { name, fatherName, phone, address, panId } = data;
+    const body = await req.json();
+    const { borrowerIds, agentId } = body;
 
-    // Create a new borrower associated with the agent
-    const borrower = await prisma.borrower.create({
-      data: {
-        name,
-        fatherName,
-        phone,
-        address,
-        panId,
-        agentId: id,
+    if (
+      !borrowerIds ||
+      !Array.isArray(borrowerIds) ||
+      borrowerIds.length === 0
+    ) {
+      return NextResponse.json(
+        { message: "No borrower IDs provided" },
+        { status: 400 }
+      );
+    }
+
+    if (!agentId) {
+      return NextResponse.json(
+        { message: "Agent ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Update all selected borrowers to be associated with this agent
+    const updatedBorrowers = await prisma.borrower.updateMany({
+      where: {
+        id: {
+          in: borrowerIds,
+        },
       },
-      include: {
-        loans: true,
+      data: {
+        agentId: agentId,
       },
     });
 
-    return NextResponse.json(borrower);
+    return NextResponse.json({
+      message: "Borrowers assigned successfully",
+      count: updatedBorrowers.count,
+    });
   } catch (error) {
-    console.error("Error creating borrower:", error);
+    console.error("Error assigning borrowers:", error);
     return NextResponse.json(
-      { error: "Failed to create borrower" },
+      { message: "Failed to assign borrowers" },
       { status: 500 }
     );
   }

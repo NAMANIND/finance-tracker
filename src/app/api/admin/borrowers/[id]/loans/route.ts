@@ -98,43 +98,69 @@ export async function POST(
     const principalPerInstallment = principalAmount / numInstallments;
     const interestPerInstallment = totalInterest / numInstallments;
 
-    // Create loan with installments
-    const loan = await prisma.loan.create({
-      data: {
-        borrowerId: params.id,
-        principalAmount: Number(principalAmount),
-        interestRate: Number(interestRate),
-        duration: Number(termMonths),
-        startDate: new Date(startDate),
-        status: "ACTIVE",
-        frequency: frequency as PaymentFrequency,
-        installments: {
-          create: Array.from({ length: numInstallments }, (_, i) => {
-            const dueDate = new Date(startDate);
-            if (frequency === PaymentFrequency.DAILY) {
-              dueDate.setDate(dueDate.getDate() + i + 1);
-            } else if (frequency === PaymentFrequency.WEEKLY) {
-              dueDate.setDate(dueDate.getDate() + (i + 1) * 7);
-            } else {
-              dueDate.setMonth(dueDate.getMonth() + i + 1);
-            }
-            return {
-              principal: principalPerInstallment,
-              interest: interestPerInstallment,
-              installmentAmount: principalPerInstallment,
-              amount: principalPerInstallment + interestPerInstallment,
-              dueDate,
-              status: "PENDING",
-            };
-          }),
+    // Helper to determine transaction amount sign
+    function getTransactionAmount(type: string, amount: number) {
+      if (type === "EXPENSE") return -Math.abs(amount);
+      if (type === "INSTALLMENT") return Math.abs(amount);
+      return amount;
+    }
+
+    // Create loan with installments and transaction in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create loan with installments
+      const loan = await tx.loan.create({
+        data: {
+          borrowerId: params.id,
+          principalAmount: Number(principalAmount),
+          interestRate: Number(interestRate),
+          duration: Number(termMonths),
+          startDate: new Date(startDate),
+          status: "ACTIVE",
+          frequency: frequency as PaymentFrequency,
+          installments: {
+            create: Array.from({ length: numInstallments }, (_, i) => {
+              const dueDate = new Date(startDate);
+              if (frequency === PaymentFrequency.DAILY) {
+                dueDate.setDate(dueDate.getDate() + i + 1);
+              } else if (frequency === PaymentFrequency.WEEKLY) {
+                dueDate.setDate(dueDate.getDate() + (i + 1) * 7);
+              } else {
+                dueDate.setMonth(dueDate.getMonth() + i + 1);
+              }
+              return {
+                principal: principalPerInstallment - interestPerInstallment,
+                interest: interestPerInstallment,
+                installmentAmount: principalPerInstallment,
+                amount: principalPerInstallment,
+                dueDate,
+                status: "PENDING",
+              };
+            }),
+          },
         },
-      },
-      include: {
-        installments: true,
-      },
+        include: {
+          installments: true,
+        },
+      });
+
+      // Create transaction record for the loan
+      await tx.transaction.create({
+        data: {
+          amount: getTransactionAmount(
+            "EXPENSE",
+            Number(principalAmount) *
+              (1 - (Number(interestRate) * Number(termMonths)) / 100)
+          ),
+          type: "EXPENSE",
+          category: "OTHER",
+          notes: `Loan disbursement for ${loan.id}`,
+        },
+      });
+
+      return loan;
     });
 
-    return NextResponse.json(loan);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error creating loan:", error);
     return NextResponse.json(

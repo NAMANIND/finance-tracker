@@ -2,6 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Borrower {
   id: string;
@@ -181,23 +189,23 @@ export default function NewLoanPage() {
                     >
                       Borrower
                     </label>
-                    <select
-                      id="borrowerId"
-                      name="borrowerId"
+                    <Select
                       value={formData.borrowerId}
-                      onChange={(e) =>
-                        setFormData({ ...formData, borrowerId: e.target.value })
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, borrowerId: value })
                       }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      required
                     >
-                      <option value="">Select a borrower</option>
-                      {borrowers.map((borrower) => (
-                        <option key={borrower.id} value={borrower.id}>
-                          {borrower.name} ({borrower.phone})
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a borrower" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {borrowers.map((borrower) => (
+                          <SelectItem key={borrower.id} value={borrower.id}>
+                            {borrower.name} ({borrower.phone})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="col-span-6 sm:col-span-3">
@@ -208,10 +216,7 @@ export default function NewLoanPage() {
                       Principal Amount
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <span className="text-gray-500 sm:text-sm">₹</span>
-                      </div>
-                      <input
+                      <Input
                         type="number"
                         name="principalAmount"
                         id="principalAmount"
@@ -239,7 +244,7 @@ export default function NewLoanPage() {
                       Interest Rate (%)
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
-                      <input
+                      <Input
                         type="number"
                         name="interestRate"
                         id="interestRate"
@@ -269,22 +274,23 @@ export default function NewLoanPage() {
                     >
                       Repayment Frequency
                     </label>
-                    <select
-                      id="repaymentFrequency"
-                      name="repaymentFrequency"
+                    <Select
                       value={formData.repaymentFrequency}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setFormData({
                           ...formData,
-                          repaymentFrequency: e.target.value,
+                          repaymentFrequency: value,
                         })
                       }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      required
                     >
-                      <option value="MONTHLY">Monthly</option>
-                      <option value="WEEKLY">Weekly</option>
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        <SelectItem value="WEEKLY">Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="col-span-6 sm:col-span-3">
@@ -294,7 +300,7 @@ export default function NewLoanPage() {
                     >
                       Start Date
                     </label>
-                    <input
+                    <Input
                       type="date"
                       name="startDate"
                       id="startDate"

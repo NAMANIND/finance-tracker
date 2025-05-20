@@ -6,28 +6,67 @@ import { requireAgent } from "@/lib/auth";
 // GET /api/agent/borrowers - Get all borrowers for the agent
 export async function GET(request: NextRequest) {
   try {
-    const agent = await requireAgent(request);
-    if (!agent) {
+    const user = await requireAgent(request);
+    if (!user) {
       return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
       });
     }
 
+    // Get the agent record
+    const agent = await prisma.agent.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!agent) {
+      console.error("Agent not found for user:", user.id);
+      return new NextResponse(JSON.stringify({ error: "Agent not found" }), {
+        status: 404,
+      });
+    }
+
+    console.log("Fetching borrowers for agent:", agent.id);
+
     const borrowers = await prisma.borrower.findMany({
       where: {
         agentId: agent.id,
       },
-      select: {
-        id: true,
-        name: true,
-        fatherName: true,
-        phone: true,
-        address: true,
-        panId: true,
+      include: {
+        loans: {
+          where: {
+            status: "ACTIVE",
+          },
+          include: {
+            installments: {
+              orderBy: {
+                dueDate: "asc",
+              },
+            },
+          },
+        },
       },
     });
 
-    return NextResponse.json(borrowers);
+    console.log("Found borrowers:", borrowers.length);
+
+    // Transform the data to include active loans count and total amount
+    const transformedBorrowers = borrowers.map((borrower) => ({
+      id: borrower.id,
+      name: borrower.name,
+      phone: borrower.phone,
+      activeLoans: borrower.loans.length,
+      totalAmount: borrower.loans.reduce((sum, loan) => {
+        const remainingInstallments = loan.installments.filter(
+          (i) => i.status === "PENDING"
+        );
+        return (
+          sum +
+          remainingInstallments.reduce((total, inst) => total + inst.amount, 0)
+        );
+      }, 0),
+    }));
+
+    return NextResponse.json(transformedBorrowers);
   } catch (error) {
     console.error("Error fetching borrowers:", error);
     return new NextResponse(

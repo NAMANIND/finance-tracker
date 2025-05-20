@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { setAuthCookies } from "@/lib/cookies";
+import { Input } from "@/components/ui/input";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -83,7 +84,7 @@ export default function Signup() {
               >
                 Full Name
               </label>
-              <input
+              <Input
                 id="name"
                 name="name"
                 type="text"
@@ -102,7 +103,7 @@ export default function Signup() {
               >
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -122,7 +123,7 @@ export default function Signup() {
               >
                 Password
               </label>
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -142,7 +143,7 @@ export default function Signup() {
               >
                 Phone Number
               </label>
-              <input
+              <Input
                 id="phone"
                 name="phone"
                 type="tel"
@@ -161,7 +162,7 @@ export default function Signup() {
               >
                 Address
               </label>
-              <input
+              <Input
                 id="address"
                 name="address"
                 type="text"
@@ -180,7 +181,7 @@ export default function Signup() {
               >
                 ID Proof
               </label>
-              <input
+              <Input
                 id="idProof"
                 name="idProof"
                 type="text"
@@ -195,7 +196,7 @@ export default function Signup() {
           </div>
 
           <div className="flex items-center">
-            <input
+            <Input
               id="remember-me"
               name="remember-me"
               type="checkbox"
