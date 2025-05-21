@@ -65,6 +65,10 @@ model User {
 
   // Relations
   agent Agent?
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
 }
 
 model Agent {
@@ -74,6 +78,9 @@ model Agent {
   borrowers Borrower[] @relation("AgentBorrowers")
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@map("agents")
 }
 
 model Borrower {
@@ -88,6 +95,12 @@ model Borrower {
   loans      Loan[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([name, phone])
+  @@index([agentId])
+  @@index([createdAt])
+  @@index([panId])
+  @@map("borrowers")
 }
 
 model Loan {
@@ -103,6 +116,11 @@ model Loan {
   installments    Installment[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([borrowerId, status])
+  @@index([startDate])
+  @@index([status])
+  @@map("loans")
 }
 
 model Installment {
@@ -122,6 +140,12 @@ model Installment {
   updatedAt         DateTime      @updatedAt
   extraAmount       Float         @default(0)
   penaltyAmount     Float         @default(0)
+
+  @@index([loanId])
+  @@index([dueDate, status])
+  @@index([paidAt])
+  @@index([status])
+  @@map("installments")
 }
 
 model Transaction {
@@ -138,4 +162,7 @@ model Transaction {
   installmentId String?
 
   @@index([installmentId])
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@map("transactions")
 }
