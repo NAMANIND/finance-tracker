@@ -27,7 +27,7 @@ export async function GET(
         },
         loans: {
           orderBy: {
-            startDate: "asc",
+            startDate: "desc",
           },
           include: {
             installments: {

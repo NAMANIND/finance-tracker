@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
-import { addDays, format, startOfDay, endOfDay } from "date-fns";
+import { addDays, format, startOfDay, endOfDay, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { ReportsSkeleton } from "@/components/dashboard/ReportsSkeleton";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon, Download } from "lucide-react";
 // We'll import xlsx dynamically when needed
 
 interface Transaction {
@@ -28,7 +31,15 @@ interface ReportStats {
   totalProfit: number;
   totalExpenses: number;
   totalInstallments: number;
+  totalIncome: number;
   transactions: Transaction[];
+}
+
+interface RangeStats {
+  profit: number;
+  expenses: number;
+  installments: number;
+  income: number;
 }
 
 export default function ReportsPage() {
@@ -43,18 +54,85 @@ export default function ReportsPage() {
     totalProfit: 0,
     totalExpenses: 0,
     totalInstallments: 0,
+    totalIncome: 0,
     transactions: [],
   });
+  const [rangeStats, setRangeStats] = useState<RangeStats>({
+    profit: 0,
+    expenses: 0,
+    installments: 0,
+    income: 0,
+  });
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState<string>("");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [pendingDateRange, setPendingDateRange] = useState<
+    DateRange | undefined
+  >(dateRange);
 
-  const fetchReportData = async (startDate: Date, endDate: Date) => {
+  // Sync input fields when calendar changes (pendingDateRange)
+  useEffect(() => {
+    if (
+      viewMode === "custom" &&
+      pendingDateRange?.from &&
+      pendingDateRange?.to
+    ) {
+      setCustomStartDate(format(pendingDateRange.from, "yyyy-MM-dd"));
+      setCustomEndDate(format(pendingDateRange.to, "yyyy-MM-dd"));
+    }
+  }, [pendingDateRange, viewMode]);
+
+  // When switching to custom, set pendingDateRange to current dateRange
+  useEffect(() => {
+    if (viewMode === "custom") {
+      setPendingDateRange(dateRange);
+      setShowCalendar(true);
+    } else {
+      setShowCalendar(false);
+    }
+  }, [viewMode]);
+
+  // Fetch all-time stats
+  const fetchAllTimeStats = async () => {
+    try {
+      setStatsLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/reports/stats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch stats");
+      }
+
+      const data = await res.json();
+      setStats((prev) => ({
+        ...prev,
+        totalProfit: data.totalProfit,
+        totalExpenses: data.totalExpenses,
+        totalInstallments: data.totalInstallments,
+        totalIncome: data.totalIncome,
+      }));
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Fetch transactions for the selected date range
+  const fetchTransactions = async (startDate: Date, endDate: Date) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `/api/admin/reports?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+        `/api/admin/reports/transactions?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -63,23 +141,53 @@ export default function ReportsPage() {
       );
 
       if (!res.ok) {
-        throw new Error("Failed to fetch report data");
+        throw new Error("Failed to fetch transactions");
       }
 
       const data = await res.json();
-      setStats(data);
+      setStats((prev) => ({
+        ...prev,
+        transactions: data.transactions,
+      }));
+
+      // Calculate range stats
+      const rangeStats = {
+        profit:
+          data.transactions
+            .filter(
+              (t: Transaction) => t.type === "INSTALLMENT" || t.type === "OTHER"
+            )
+            .reduce((sum: number, t: Transaction) => sum + t.amount, 0) -
+          data.transactions
+            .filter((t: Transaction) => t.type === "EXPENSE")
+            .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+        expenses: data.transactions
+          .filter((t: Transaction) => t.type === "EXPENSE")
+          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+        installments: data.transactions
+          .filter((t: Transaction) => t.type === "INSTALLMENT")
+          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+        income: data.transactions
+          .filter((t: Transaction) => t.type === "OTHER")
+          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+      };
+      setRangeStats(rangeStats);
     } catch (error) {
-      console.error("Error fetching report data:", error);
+      console.error("Error fetching transactions:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    fetchAllTimeStats();
+  }, []); // Fetch stats only once when component mounts
+
+  useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      fetchReportData(dateRange.from, dateRange.to);
+      fetchTransactions(dateRange.from, dateRange.to);
     }
-  }, [dateRange]);
+  }, [dateRange]); // Fetch transactions when date range changes
 
   const handleViewModeChange = (value: string) => {
     setViewMode(value as typeof viewMode);
@@ -89,6 +197,12 @@ export default function ReportsPage() {
       case "daily":
         setDateRange({
           from: startOfDay(today),
+          to: endOfDay(today),
+        });
+        break;
+      case "yesterday":
+        setDateRange({
+          from: startOfDay(addDays(today, -1)),
           to: endOfDay(today),
         });
         break;
@@ -340,97 +454,300 @@ export default function ReportsPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleCustomDateSubmit = () => {
+    try {
+      if (!customStartDate || !customEndDate) return;
+      const start = parse(customStartDate, "yyyy-MM-dd", new Date());
+      const end = parse(customEndDate, "yyyy-MM-dd", new Date());
+      if (start && end) {
+        setPendingDateRange({
+          from: startOfDay(start),
+          to: endOfDay(end),
+        });
+        setDateRange({
+          from: startOfDay(start),
+          to: endOfDay(end),
+        });
+        setShowCalendar(false); // Hide calendar after apply
+      }
+    } catch (error) {
+      console.error("Invalid date format");
+    }
+  };
+
+  if (loading) {
+    return <ReportsSkeleton />;
+  }
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Reports & Statistics
-          </h1>
-          <p className="text-muted-foreground">
-            View your financial reports and statistics
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage and view all reports in the system
           </p>
         </div>
-        <Button onClick={handleExport} variant="outline" className="ml-auto">
-          Export to Excel
+        <Button
+          onClick={handleExport}
+          className="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+        >
+          <Download className="mr-2 h-5 w-5" /> Export to Excel
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₹{stats.totalProfit.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₹{stats.totalExpenses.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Installments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₹{stats.totalInstallments.toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
+      {/* All Time Stats */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">All Time Stats</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                All Time Profit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.totalProfit.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                All Time Income
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.totalIncome.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                All Time Installments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.totalInstallments.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                All Time Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.totalExpenses.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="mb-8 grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Date Range</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Select value={viewMode} onValueChange={handleViewModeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select view mode" />
+      {/* Range Stats */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">
+          {viewMode === "custom" && dateRange?.from && dateRange?.to
+            ? `Stats from ${format(dateRange.from, "PPP")} to ${format(
+                dateRange.to,
+                "PPP"
+              )}`
+            : `${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Stats`}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Period Profit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${rangeStats.profit.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Period Income
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${rangeStats.income.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Period Installments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${rangeStats.installments.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Period Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${rangeStats.expenses.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Date Range Selector */}
+      <div className="flex flex-col  lg:flex-row gap-4 items-start bg-white p-4 rounded-lg">
+        <div className="flex flex-col gap-2 w-full lg:w-auto relative">
+          <div className="flex flex-row gap-2 items-end  ">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs text-gray-600">Date Range</label>
+              <Select
+                value={viewMode}
+                onValueChange={(val) => {
+                  setViewMode(val as typeof viewMode);
+                  if (val === "custom") setShowCalendar(true);
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Select view" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                <SelectContent className="w-[150px]">
+                  <SelectItem value="daily">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="weekly">Last 7 Days</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="yearly">This Year</SelectItem>
                   <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
-
-              {viewMode === "custom" && (
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                />
-              )}
-
-              {dateRange?.from && (
-                <div className="text-sm text-muted-foreground">
-                  {format(dateRange.from, "PPP")}
-                  {dateRange.to && ` - ${format(dateRange.to, "PPP")}`}
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
+            {viewMode === "custom" && (
+              <div className="flex flex-row gap-4 items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-600">Start Date</label>
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => {
+                      setCustomStartDate(e.target.value);
+                      const start = parse(
+                        e.target.value,
+                        "yyyy-MM-dd",
+                        new Date()
+                      );
+                      setPendingDateRange((prev) => ({
+                        from: startOfDay(start),
+                        to: prev?.to || undefined,
+                      }));
+                    }}
+                    className="w-[140px]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-600">End Date</label>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => {
+                      setCustomEndDate(e.target.value);
+                      const end = parse(
+                        e.target.value,
+                        "yyyy-MM-dd",
+                        new Date()
+                      );
+                      setPendingDateRange((prev) => ({
+                        from: prev?.from || undefined,
+                        to: endOfDay(end),
+                      }));
+                    }}
+                    className="w-[140px]"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    if (pendingDateRange?.from && pendingDateRange?.to) {
+                      setDateRange(pendingDateRange);
+                      setShowCalendar(false);
+                    }
+                  }}
+                  className="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                >
+                  Apply
+                </Button>
+                {/* button to toggle calendar */}
+                <Button
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  variant="outline"
+                  size="sm"
+                  className="w-10 h-10"
+                >
+                  <CalendarIcon />
+                </Button>
+              </div>
+            )}
+          </div>
+          {viewMode === "custom" && showCalendar && (
+            <div className="absolute top-10 right-0 bg-white ml-0 lg:ml-8 mt-8 lg:mt-8 z-50 shadow-lg rounded-md">
+              <Calendar
+                mode="range"
+                selected={pendingDateRange}
+                onSelect={setPendingDateRange}
+                className="rounded-md border shadow-lg"
+                numberOfMonths={2}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">

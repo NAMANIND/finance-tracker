@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 interface Transaction {
   id: string;
@@ -151,13 +152,7 @@ export default function AdminDashboard() {
     isLoadingBorrowers;
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg text-gray-600">Loading dashboard...</div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const formatCurrency = (amount: number) => {
@@ -312,7 +307,70 @@ export default function AdminDashboard() {
               </CollapsibleContent>
             </Collapsible>
           </div>
+          {/* Today's New Borrowers */}
+          <div className="overflow-hidden rounded-lg bg-white shadow">
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-6">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Today&apos;s New Borrowers
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+                      {todayBorrowers.length}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-6 pt-0">
+                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {todayBorrowers.length === 0 ? (
+                      <p className="text-gray-500">
+                        No new borrowers registered today
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {todayBorrowers.map((borrower: Borrower) => (
+                          <div
+                            key={borrower.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                                <UserPlus className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {borrower.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {borrower.phone}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-blue-600">
+                                New Borrower
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {formatDate(borrower.createdAt, "dd MMM yyyy")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </div>
 
+        {/* Right Column */}
+        <div className="space-y-6">
           {/* Today's Transactions */}
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <Collapsible defaultOpen>
@@ -388,70 +446,6 @@ export default function AdminDashboard() {
                               </p>
                               <p className="text-sm text-gray-500">
                                 {transaction.type}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Today's New Borrowers */}
-          <div className="overflow-hidden rounded-lg bg-white shadow">
-            <Collapsible defaultOpen>
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-6">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Today&apos;s New Borrowers
-                    </h2>
-                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
-                      {todayBorrowers.length}
-                    </span>
-                  </div>
-                  <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="p-6 pt-0">
-                  <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
-                    {todayBorrowers.length === 0 ? (
-                      <p className="text-gray-500">
-                        No new borrowers registered today
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {todayBorrowers.map((borrower: Borrower) => (
-                          <div
-                            key={borrower.id}
-                            className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                                <UserPlus className="h-5 w-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {borrower.name}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {borrower.phone}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-blue-600">
-                                New Borrower
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {formatDate(borrower.createdAt, "dd MMM yyyy")}
                               </p>
                             </div>
                           </div>

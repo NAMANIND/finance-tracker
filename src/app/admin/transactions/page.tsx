@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TransactionsSkeleton } from "@/components/dashboard/TransactionsSkeleton";
 
 interface Transaction {
   id: string;
@@ -341,13 +342,7 @@ export default function TransactionsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg text-gray-600">Loading transactions...</div>
-        </div>
-      </div>
-    );
+    return <TransactionsSkeleton />;
   }
 
   return (

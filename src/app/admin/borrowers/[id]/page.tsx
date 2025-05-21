@@ -2,6 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import {
   UserIcon,
@@ -22,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BorrowerDetailsSkeleton } from "@/components/dashboard/BorrowerDetailsSkeleton";
 
 interface Loan {
   id: string;
@@ -37,6 +47,9 @@ interface Loan {
     principal: number;
     interest: number;
     installmentAmount: number;
+    extraAmount: number;
+    penaltyAmount: number;
+    paidAt?: string;
   }[];
 }
 
@@ -89,6 +102,17 @@ export default function BorrowerDetailsPage() {
   const [formError, setFormError] = useState("");
   const [installmentDetails, setInstallmentDetails] =
     useState<InstallmentDetails | null>(null);
+  const [settlementDialog, setSettlementDialog] = useState<{
+    isOpen: boolean;
+    loanId: string | null;
+    pendingAmount: number;
+    pendingInstallments: number;
+  }>({
+    isOpen: false,
+    loanId: null,
+    pendingAmount: 0,
+    pendingInstallments: 0,
+  });
 
   useEffect(() => {
     const fetchBorrowerDetails = async () => {
@@ -322,15 +346,81 @@ export default function BorrowerDetailsPage() {
     }));
   };
 
+  const handleSettleLoan = async (loanId: string) => {
+    const loan = borrower?.loans.find((l) => l.id === loanId);
+    if (!loan) return;
+
+    // Calculate pending amounts
+    const pendingInstallments = loan.installments.filter(
+      (inst) => inst.status !== "PAID"
+    );
+    const pendingAmount = pendingInstallments.reduce(
+      (sum, inst) => sum + inst.amount + inst.extraAmount + inst.penaltyAmount,
+      0
+    );
+
+    setSettlementDialog({
+      isOpen: true,
+      loanId,
+      pendingAmount,
+      pendingInstallments: pendingInstallments.length,
+    });
+  };
+
+  const confirmSettlement = async () => {
+    if (!settlementDialog.loanId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `/api/admin/loans/${settlementDialog.loanId}/settle`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            markPendingAsPaid: true,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to settle loan");
+      }
+
+      // Refresh borrower details to update the UI
+      const borrowerRes = await fetch(`/api/admin/borrowers/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!borrowerRes.ok) {
+        throw new Error("Failed to fetch updated borrower details");
+      }
+
+      const data = await borrowerRes.json();
+      setBorrower(data);
+      setSettlementDialog({
+        isOpen: false,
+        loanId: null,
+        pendingAmount: 0,
+        pendingInstallments: 0,
+      });
+      toast.success("Loan settled successfully");
+    } catch (error) {
+      console.error("Error settling loan:", error);
+      toast.error("Failed to settle loan");
+    }
+  };
+
   // Sort loans by start date (most recent first)
   const sortedLoans = borrower?.loans || [];
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <ArrowPathIcon className="h-8 w-8 animate-spin text-indigo-600" />
-      </div>
-    );
+    return <BorrowerDetailsSkeleton />;
   }
 
   if (!borrower) {
@@ -510,9 +600,22 @@ export default function BorrowerDetailsPage() {
                         onClick={() => toggleLoanExpansion(loan.id)}
                       >
                         <div>
-                          <h3 className="text-lg font-medium text-gray-900">
-                            Loan #{loan.id.substring(0, 8)}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              Loan #{loan.id.substring(0, 8)}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                loan.status === "ACTIVE"
+                                  ? "bg-green-100 text-green-800"
+                                  : loan.status === "SETTLED"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {loan.status}
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-500">
                             Started on {formatDate(loan.startDate)}
                           </p>
@@ -536,6 +639,69 @@ export default function BorrowerDetailsPage() {
 
                       {expandedLoans[loan.id] && (
                         <div className="border-t border-gray-200 p-4 bg-gray-50">
+                          <div className="mb-6 grid grid-cols-4 gap-4">
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <h5 className="text-sm font-medium text-gray-500">
+                                Total Collected
+                              </h5>
+                              <p className="mt-1 text-xl font-semibold text-gray-900">
+                                {formatCurrency(
+                                  loan.installments
+                                    .filter((inst) => inst.status === "PAID")
+                                    .reduce(
+                                      (sum, inst) =>
+                                        sum +
+                                        inst.amount +
+                                        inst.extraAmount +
+                                        inst.penaltyAmount,
+                                      0
+                                    )
+                                )}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <h5 className="text-sm font-medium text-gray-500">
+                                Installments
+                              </h5>
+                              <p className="mt-1 text-xl font-semibold text-gray-900">
+                                {formatCurrency(
+                                  loan.installments
+                                    .filter((inst) => inst.status === "PAID")
+                                    .reduce((sum, inst) => sum + inst.amount, 0)
+                                )}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <h5 className="text-sm font-medium text-gray-500">
+                                Extra Money
+                              </h5>
+                              <p className="mt-1 text-xl font-semibold text-gray-900">
+                                {formatCurrency(
+                                  loan.installments
+                                    .filter((inst) => inst.status === "PAID")
+                                    .reduce(
+                                      (sum, inst) => sum + inst.extraAmount,
+                                      0
+                                    )
+                                )}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-white p-4 shadow-sm">
+                              <h5 className="text-sm font-medium text-gray-500">
+                                Penalties
+                              </h5>
+                              <p className="mt-1 text-xl font-semibold text-gray-900">
+                                {formatCurrency(
+                                  loan.installments
+                                    .filter((inst) => inst.status === "PAID")
+                                    .reduce(
+                                      (sum, inst) => sum + inst.penaltyAmount,
+                                      0
+                                    )
+                                )}
+                              </p>
+                            </div>
+                          </div>
                           <h4 className="mb-2 text-sm font-medium text-gray-500">
                             Installments
                           </h4>
@@ -547,6 +713,9 @@ export default function BorrowerDetailsPage() {
                                     Due Date
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    Paid Date
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Installment
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -554,6 +723,12 @@ export default function BorrowerDetailsPage() {
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Interest
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    Extra Money
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    Penalty
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Total Amount
@@ -570,6 +745,11 @@ export default function BorrowerDetailsPage() {
                                       {formatDate(installment.dueDate)}
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {installment.paidAt
+                                        ? formatDate(installment.paidAt)
+                                        : "-"}
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                                       {formatCurrency(
                                         installment.installmentAmount
                                       )}
@@ -581,7 +761,19 @@ export default function BorrowerDetailsPage() {
                                       {formatCurrency(installment.interest)}
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                      {formatCurrency(installment.amount)}
+                                      {formatCurrency(installment.extraAmount)}
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {formatCurrency(
+                                        installment.penaltyAmount
+                                      )}
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {formatCurrency(
+                                        installment.amount +
+                                          installment.extraAmount +
+                                          installment.penaltyAmount
+                                      )}
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                                       <div className="flex items-center">
@@ -596,6 +788,16 @@ export default function BorrowerDetailsPage() {
                               </tbody>
                             </table>
                           </div>
+                          {loan.status === "ACTIVE" && (
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                onClick={() => handleSettleLoan(loan.id)}
+                                className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
+                              >
+                                Settle Loan
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -863,6 +1065,67 @@ export default function BorrowerDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Settlement Dialog */}
+      <Dialog
+        open={settlementDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSettlementDialog({
+              isOpen: false,
+              loanId: null,
+              pendingAmount: 0,
+              pendingInstallments: 0,
+            });
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Loan Settlement</DialogTitle>
+            <DialogDescription>
+              {settlementDialog.pendingInstallments > 0 ? (
+                <>
+                  <div className="mb-4">
+                    There are {settlementDialog.pendingInstallments} pending
+                    installments with a total amount of{" "}
+                    {formatCurrency(settlementDialog.pendingAmount)}.
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Would you like to mark these installments as paid and settle
+                    the loan?
+                  </div>
+                </>
+              ) : (
+                <div>Are you sure you want to settle this loan?</div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() =>
+                setSettlementDialog({
+                  isOpen: false,
+                  loanId: null,
+                  pendingAmount: 0,
+                  pendingInstallments: 0,
+                })
+              }
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmSettlement}
+              className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
+            >
+              {settlementDialog.pendingInstallments > 0
+                ? "Mark as Paid & Settle"
+                : "Settle Loan"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

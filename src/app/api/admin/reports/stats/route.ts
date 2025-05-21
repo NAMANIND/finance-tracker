@@ -12,30 +12,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-
-    if (!startDate || !endDate) {
-      return new NextResponse(
-        JSON.stringify({ error: "Start date and end date are required" }),
-        { status: 400 }
-      );
-    }
-
-    // Fetch transactions within date range for the table
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
     // Fetch all transactions for stats
     const allTransactions = await prisma.transaction.findMany({
       orderBy: {
@@ -63,10 +39,9 @@ export async function GET(req: NextRequest) {
       totalExpenses,
       totalInstallments,
       totalIncome,
-      transactions, // This will still be filtered by date range
     });
   } catch (error) {
-    console.error("Error fetching reports:", error);
+    console.error("Error fetching stats:", error);
     return new NextResponse(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }

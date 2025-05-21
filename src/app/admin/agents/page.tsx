@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import bcrypt from "bcryptjs";
-
+import { BorrowersSkeleton } from "@/components/dashboard/BorrowersSkeleton";
 interface Agent {
   id: string;
   user: {
@@ -113,13 +113,7 @@ export default function AgentsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg text-gray-600">Loading agents...</div>
-        </div>
-      </div>
-    );
+    return <BorrowersSkeleton />;
   }
 
   return (

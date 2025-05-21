@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { BorrowersSkeleton } from "@/components/dashboard/BorrowersSkeleton";
 
 interface Borrower {
   id: string;
@@ -159,11 +160,7 @@ export default function BorrowersPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <ArrowPathIcon className="h-8 w-8 animate-spin text-indigo-600" />
-      </div>
-    );
+    return <BorrowersSkeleton />;
   }
 
   return (
@@ -488,9 +485,6 @@ export default function BorrowersPage() {
                         <div className="ml-4">
                           <div className="font-medium text-gray-900">
                             {borrower.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {borrower.fatherName}
                           </div>
                         </div>
                       </div>

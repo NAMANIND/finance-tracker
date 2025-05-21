@@ -14,7 +14,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-
+import { AgentDetailsSkeleton } from "@/components/dashboard/AgentDetailsSkeleton";
 interface Borrower {
   id: string;
   name: string;
@@ -36,7 +36,7 @@ export default function AgentPage() {
   const params = useParams<{ id: string }>();
   const [agent, setAgent] = useState<AgentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("borrowers");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddBorrowerModal, setShowAddBorrowerModal] = useState(false);
   const [selectedBorrowers, setSelectedBorrowers] = useState<Borrower[]>([]);
@@ -155,13 +155,7 @@ export default function AgentPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg text-gray-600">Loading agent details...</div>
-        </div>
-      </div>
-    );
+    return <AgentDetailsSkeleton />;
   }
 
   if (!agent) {
@@ -199,17 +193,6 @@ export default function AgentPage() {
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px" aria-label="Tabs">
             <button
-              onClick={() => setActiveTab("details")}
-              className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
-                activeTab === "details"
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}
-            >
-              <UserIcon className="mr-2 h-5 w-5" />
-              Agent Details
-            </button>
-            <button
               onClick={() => setActiveTab("borrowers")}
               className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
                 activeTab === "borrowers"
@@ -219,6 +202,17 @@ export default function AgentPage() {
             >
               <UserGroupIcon className="mr-2 h-5 w-5" />
               Borrowers
+            </button>
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
+                activeTab === "details"
+                  ? "border-indigo-500 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              <UserIcon className="mr-2 h-5 w-5" />
+              Agent Details
             </button>
           </nav>
         </div>
