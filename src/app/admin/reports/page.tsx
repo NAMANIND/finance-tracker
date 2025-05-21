@@ -419,7 +419,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className=" space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
@@ -441,9 +441,9 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Profit
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -457,9 +457,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Income
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -473,9 +473,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Installments
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -489,9 +489,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Expenses
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -519,9 +519,9 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 Period Profit
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -535,9 +535,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 Period Income
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -551,9 +551,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 Period Installments
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -567,9 +567,9 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 Period Expenses
-              </CardTitle>
+              </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
