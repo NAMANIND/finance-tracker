@@ -16,7 +16,6 @@ import {
   UserIcon,
   CreditCardIcon,
   PlusCircleIcon,
-  ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,

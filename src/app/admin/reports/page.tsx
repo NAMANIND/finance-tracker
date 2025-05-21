@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRange } from "react-day-picker";
-import { addDays, format, startOfDay, endOfDay, parse } from "date-fns";
+import { format, startOfDay, endOfDay, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ReportsSkeleton } from "@/components/dashboard/ReportsSkeleton";
 import { Input } from "@/components/ui/input";
@@ -188,46 +188,6 @@ export default function ReportsPage() {
       fetchTransactions(dateRange.from, dateRange.to);
     }
   }, [dateRange]); // Fetch transactions when date range changes
-
-  const handleViewModeChange = (value: string) => {
-    setViewMode(value as typeof viewMode);
-    // Update date range based on view mode
-    const today = new Date();
-    switch (value) {
-      case "daily":
-        setDateRange({
-          from: startOfDay(today),
-          to: endOfDay(today),
-        });
-        break;
-      case "yesterday":
-        setDateRange({
-          from: startOfDay(addDays(today, -1)),
-          to: endOfDay(today),
-        });
-        break;
-      case "weekly":
-        setDateRange({
-          from: startOfDay(addDays(today, -7)),
-          to: endOfDay(today),
-        });
-        break;
-      case "monthly":
-        setDateRange({
-          from: startOfDay(new Date(today.getFullYear(), today.getMonth(), 1)),
-          to: endOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
-        });
-        break;
-      case "yearly":
-        setDateRange({
-          from: startOfDay(new Date(today.getFullYear(), 0, 1)),
-          to: endOfDay(new Date(today.getFullYear(), 11, 31)),
-        });
-        break;
-      default:
-        break;
-    }
-  };
 
   // Inline editing for notes
   const handleEdit = (id: string, currentNotes: string) => {
@@ -452,27 +412,6 @@ export default function ReportsPage() {
     a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
-  };
-
-  const handleCustomDateSubmit = () => {
-    try {
-      if (!customStartDate || !customEndDate) return;
-      const start = parse(customStartDate, "yyyy-MM-dd", new Date());
-      const end = parse(customEndDate, "yyyy-MM-dd", new Date());
-      if (start && end) {
-        setPendingDateRange({
-          from: startOfDay(start),
-          to: endOfDay(end),
-        });
-        setDateRange({
-          from: startOfDay(start),
-          to: endOfDay(end),
-        });
-        setShowCalendar(false); // Hide calendar after apply
-      }
-    } catch (error) {
-      console.error("Invalid date format");
-    }
   };
 
   if (loading) {

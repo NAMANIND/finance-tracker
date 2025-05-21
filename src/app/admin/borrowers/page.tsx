@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   UserIcon,
   PlusCircleIcon,
-  ArrowPathIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
   IdentificationIcon,
