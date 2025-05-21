@@ -21,15 +21,6 @@ import { PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
-interface DashboardStats {
-  totalLoans: number;
-  totalBorrowers: number;
-  totalAgents: number;
-  totalProfit: number;
-  upcomingDues: number;
-  defaulters: number;
-}
-
 interface Transaction {
   id: string;
   loanId: string;
