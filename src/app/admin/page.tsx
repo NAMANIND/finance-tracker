@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { formatDate } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import {
   Collapsible,
@@ -35,6 +36,7 @@ interface Transaction {
   borrowerName: string;
   amount: number;
   type: string;
+  category: string;
   createdAt: string;
 }
 
@@ -63,95 +65,101 @@ interface Installment {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalLoans: 0,
-    totalBorrowers: 0,
-    totalAgents: 0,
-    totalProfit: 0,
-    upcomingDues: 0,
-    defaulters: 0,
-  });
-  const [todayTransactions, setTodayTransactions] = useState<Transaction[]>([]);
-  const [todayBorrowers, setTodayBorrowers] = useState<Borrower[]>([]);
-  const [todayInstallments, setTodayInstallments] = useState<Installment[]>([]);
-
-  const [loading, setLoading] = useState(true);
-
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+  // React Query hook for fetching dashboard stats
+  const {
+    data: stats = {
+      totalLoans: 0,
+      totalBorrowers: 0,
+      totalAgents: 0,
+      totalProfit: 0,
+      upcomingDues: 0,
+      defaulters: 0,
+    },
+    isLoading: isLoadingStats,
+  } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/admin/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        toast.error("Failed to fetch stats");
+        throw new Error("Failed to fetch stats");
+      }
+      return response.json();
+    },
+  });
+
+  // React Query hook for fetching today's transactions
+  const { data: todayTransactions = [], isLoading: isLoadingTransactions } =
+    useQuery({
+      queryKey: ["todayTransactions"],
+      queryFn: async () => {
         const token = localStorage.getItem("token");
-
-        // Fetch dashboard stats
-        const statsRes = await fetch("/api/admin/stats", {
+        const response = await fetch("/api/admin/transactions/today", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        if (!statsRes.ok) {
-          throw new Error("Failed to fetch stats");
-        }
-
-        const statsData = await statsRes.json();
-        setStats(statsData);
-
-        // Fetch today's transactions
-        const transactionsRes = await fetch("/api/admin/transactions/today", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!transactionsRes.ok) {
+        if (!response.ok) {
+          toast.error("Failed to fetch transactions");
           throw new Error("Failed to fetch transactions");
         }
+        return response.json();
+      },
+    });
 
-        const transactionsData = await transactionsRes.json();
-        setTodayTransactions(transactionsData);
-
-        // Fetch today's borrowers
-        const borrowersRes = await fetch("/api/admin/borrowers/today", {
+  // React Query hook for fetching today's installments
+  const { data: todayInstallments = [], isLoading: isLoadingInstallments } =
+    useQuery({
+      queryKey: ["todayInstallments"],
+      queryFn: async () => {
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/admin/installments/today", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        if (!borrowersRes.ok) {
-          throw new Error("Failed to fetch borrowers");
-        }
-
-        const borrowersData = await borrowersRes.json();
-        console.log("Today's borrowers:", borrowersData);
-        setTodayBorrowers(borrowersData);
-
-        // Fetch today's installments
-        const installmentsRes = await fetch("/api/admin/installments/today", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!installmentsRes.ok) {
+        if (!response.ok) {
+          toast.error("Failed to fetch installments");
           throw new Error("Failed to fetch installments");
         }
+        return response.json();
+      },
+    });
 
-        const installmentsData = await installmentsRes.json();
-        console.log("Today's installments:", installmentsData);
-        setTodayInstallments(installmentsData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // React Query hook for fetching today's borrowers
+  const { data: todayBorrowers = [], isLoading: isLoadingBorrowers } = useQuery(
+    {
+      queryKey: ["todayBorrowers"],
+      queryFn: async () => {
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/admin/borrowers/today", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          toast.error("Failed to fetch borrowers");
+          throw new Error("Failed to fetch borrowers");
+        }
+        return response.json();
+      },
+    }
+  );
 
-    fetchData();
-  }, []);
+  const isLoading =
+    isLoadingStats ||
+    isLoadingTransactions ||
+    isLoadingInstallments ||
+    isLoadingBorrowers;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
@@ -160,6 +168,7 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -252,7 +261,7 @@ export default function AdminDashboard() {
                       </p>
                     ) : (
                       <div className="space-y-4">
-                        {todayInstallments.map((installment) => (
+                        {todayInstallments.map((installment: Installment) => (
                           <div
                             key={installment.id}
                             className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
@@ -338,7 +347,7 @@ export default function AdminDashboard() {
                       </p>
                     ) : (
                       <div className="overflow-x-auto">
-                        {todayTransactions.map((transaction) => (
+                        {todayTransactions.map((transaction: Transaction) => (
                           <div
                             key={transaction.id}
                             className="flex items-center justify-between rounded-lg border border-gray-200 p-4 mb-4"
@@ -363,7 +372,7 @@ export default function AdminDashboard() {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">
-                                  {transaction.borrowerName || transaction.type}
+                                  {transaction.category}
                                 </p>
                                 <p className="text-sm text-gray-500">
                                   {formatDate(
@@ -428,7 +437,7 @@ export default function AdminDashboard() {
                       </p>
                     ) : (
                       <div className="space-y-4">
-                        {todayBorrowers.map((borrower) => (
+                        {todayBorrowers.map((borrower: Borrower) => (
                           <div
                             key={borrower.id}
                             className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
@@ -484,16 +493,18 @@ export default function AdminDashboard() {
                 <div className="p-6 pt-0">
                   <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
                     {todayInstallments.filter(
-                      (installment) => installment.status === "OVERDUE"
+                      (installment: Installment) =>
+                        installment.status === "OVERDUE"
                     ).length === 0 ? (
                       <p className="text-gray-500">No defaulters found.</p>
                     ) : (
                       <div className="space-y-4">
                         {todayInstallments
                           .filter(
-                            (installment) => installment.status === "OVERDUE"
+                            (installment: Installment) =>
+                              installment.status === "OVERDUE"
                           )
-                          .map((installment) => (
+                          .map((installment: Installment) => (
                             <div
                               key={installment.id}
                               className="flex items-center justify-between rounded-lg border border-red-100 bg-red-50 p-4"

@@ -327,7 +327,7 @@ async function main() {
           data: {
             amount: loanData.principalAmount,
             type: TransactionType.EXPENSE,
-            category: TransactionCategory.OTHER,
+            category: TransactionCategory.LOAN,
             notes: `Loan disbursement for ${borrower.name}`,
             createdAt: loanData.startDate,
           },

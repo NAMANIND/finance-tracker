@@ -305,7 +305,7 @@ export default function BorrowersPage() {
                             htmlFor="panId"
                             className="block text-sm font-medium text-gray-700"
                           >
-                            PAN ID
+                            ID Proof Number
                           </label>
                           <Input
                             type="text"

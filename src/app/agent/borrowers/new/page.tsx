@@ -150,7 +150,7 @@ export default function NewBorrower() {
               htmlFor="panId"
               className="block text-sm font-medium text-gray-700"
             >
-              PAN ID
+              ID Proof Number
             </label>
             <div className="mt-1">
               <Input

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { TransactionType, Loan } from "@prisma/client";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -64,7 +65,8 @@ interface NewTransactionForm {
     | "FAMILY"
     | "PERSONAL"
     | "INCOME"
-    | "OTHER";
+    | "OTHER"
+    | "LOAN";
   notes: string;
   penaltyAmount?: number;
   extraAmount?: number;
@@ -92,7 +94,7 @@ export default function TransactionsPage() {
     borrowerId: "",
   });
   const [formError, setFormError] = useState("");
-  const [formSuccess, setFormSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState("expense");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,6 +109,7 @@ export default function TransactionsPage() {
         });
 
         if (!transactionsRes.ok) {
+          toast.error("Failed to fetch transactions");
           throw new Error("Failed to fetch transactions");
         }
 
@@ -121,6 +124,7 @@ export default function TransactionsPage() {
         });
 
         if (!borrowersRes.ok) {
+          toast.error("Failed to fetch borrowers");
           throw new Error("Failed to fetch borrowers");
         }
 
@@ -222,14 +226,54 @@ export default function TransactionsPage() {
       loanId: installment.loanId,
       installmentId: installment.id,
       amount: installment.amount,
-      type: TransactionType.INSTALLMENT,
+      type: TransactionType.EXPENSE,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    setFormSuccess("");
+
+    if (!formData.type) {
+      setFormError("Transaction type is required");
+      return;
+    }
+
+    if (!formData.category && formData.type !== TransactionType.INSTALLMENT) {
+      setFormError("Category is required for non-installment transactions");
+      return;
+    }
+
+    // it is borrower payment
+    if (formData.type === TransactionType.INCOME) {
+      if (!formData.borrowerId) {
+        setFormError("Borrower selection is required");
+        return;
+      }
+    }
+
+    if (!formData.amount || formData.amount <= 0) {
+      setFormError("Amount must be greater than 0");
+      return;
+    }
+
+    if (formData.type === TransactionType.INSTALLMENT) {
+      if (!formData.loanId) {
+        setFormError("Loan ID is required for installment payments");
+        return;
+      }
+      if (!formData.installmentId) {
+        setFormError("Installment ID is required for installment payments");
+        return;
+      }
+    }
+
+    if (formData.type === TransactionType.INCOME) {
+      if (!formData.borrowerId) {
+        setFormError("Borrower selection is required");
+        return;
+      }
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -253,13 +297,15 @@ export default function TransactionsPage() {
         installmentId: "",
         amount: 0,
         type: TransactionType.EXPENSE,
-        category: "PERSONAL",
+        category: activeTab === "borrower" ? "LOAN" : "PERSONAL",
         notes: "",
         penaltyAmount: 0,
         extraAmount: 0,
       });
 
-      setFormSuccess("Transaction added successfully!");
+      setSelectedBorrowerInstallments([]);
+
+      toast.success("Transaction added successfully!");
 
       // Refresh transactions
       const transactionsRes = await fetch("/api/admin/transactions/today", {
@@ -269,15 +315,17 @@ export default function TransactionsPage() {
       });
 
       if (!transactionsRes.ok) {
+        toast.error("Failed to refresh transactions");
         throw new Error("Failed to refresh transactions");
       }
 
       const transactionsData = await transactionsRes.json();
       setTransactions(transactionsData);
     } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "Failed to add transaction"
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to add transaction";
+      setFormError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -383,8 +431,40 @@ export default function TransactionsPage() {
           </h2>
           <Tabs defaultValue="expense" className="w-full">
             <TabsList className="mb-6 grid w-full grid-cols-2">
-              <TabsTrigger value="expense">Add Transaction</TabsTrigger>
-              <TabsTrigger value="borrower">Borrower Payment</TabsTrigger>
+              <TabsTrigger
+                onClick={() => {
+                  setActiveTab("expense");
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: TransactionType.EXPENSE,
+                    category: "PERSONAL",
+                    amount: 0,
+                    notes: "",
+                  }));
+
+                  setFormError("");
+                }}
+                value="expense"
+              >
+                Add Transaction
+              </TabsTrigger>
+              <TabsTrigger
+                onClick={() => {
+                  setActiveTab("borrower");
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: TransactionType.EXPENSE,
+                    category: "LOAN",
+                    amount: 0,
+                    notes: "",
+                  }));
+                  // clear the error
+                  setFormError("");
+                }}
+                value="borrower"
+              >
+                Borrower Payment
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="expense">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -397,9 +477,15 @@ export default function TransactionsPage() {
                   </label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: TransactionType) =>
-                      setFormData((prev) => ({ ...prev, type: value }))
-                    }
+                    onValueChange={(value: TransactionType) => {
+                      setFormData((prev) => ({ ...prev, type: value }));
+                      if (value === "INCOME") {
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: "OFFICE",
+                        }));
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select transaction type" />
@@ -457,7 +543,8 @@ export default function TransactionsPage() {
                     type="number"
                     id="amount"
                     name="amount"
-                    value={formData.amount}
+                    placeholder="Enter amount"
+                    value={formData.amount === 0 ? "" : formData.amount}
                     onChange={handleInputChange}
                     required
                     min="0"
@@ -608,12 +695,12 @@ export default function TransactionsPage() {
                     type="number"
                     id="amount"
                     name="amount"
-                    value={formData.amount}
+                    value={formData.amount === 0 ? "" : formData.amount}
+                    placeholder="Enter Payment Amount"
                     onChange={handleInputChange}
                     required
                     min="0"
                     step="0.01"
-                    placeholder="Enter payment amount"
                   />
                 </div>
 
@@ -629,9 +716,13 @@ export default function TransactionsPage() {
                       type="number"
                       id="penaltyAmount"
                       name="penaltyAmount"
-                      value={formData.penaltyAmount || 0}
+                      value={
+                        formData.penaltyAmount === 0
+                          ? ""
+                          : formData.penaltyAmount
+                      }
                       onChange={handleInputChange}
-                      placeholder="Enter penalty amount"
+                      placeholder="Enter Penalty Amount"
                       min="0"
                       step="0.01"
                     />
@@ -648,9 +739,11 @@ export default function TransactionsPage() {
                       type="number"
                       id="extraAmount"
                       name="extraAmount"
-                      value={formData.extraAmount || 0}
+                      value={
+                        formData.extraAmount === 0 ? "" : formData.extraAmount
+                      }
                       onChange={handleInputChange}
-                      placeholder="Enter extra amount"
+                      placeholder="Enter Extra Amount"
                       min="0"
                       step="0.01"
                     />
@@ -723,12 +816,6 @@ export default function TransactionsPage() {
           {formError && (
             <div className="mt-4 rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{formError}</div>
-            </div>
-          )}
-
-          {formSuccess && (
-            <div className="mt-4 rounded-md bg-green-50 p-4">
-              <div className="text-sm text-green-700">{formSuccess}</div>
             </div>
           )}
         </Card>

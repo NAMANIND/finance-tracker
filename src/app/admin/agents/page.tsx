@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import bcrypt from "bcryptjs";
 
 interface Agent {
   id: string;
@@ -77,7 +78,10 @@ export default function AgentsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          password: await bcrypt.hash(formData.password, 10),
+        }),
       });
 
       if (!res.ok) {

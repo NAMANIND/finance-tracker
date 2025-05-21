@@ -382,17 +382,7 @@ export default function BorrowerDetailsPage() {
               <CreditCardIcon className="mr-2 h-5 w-5" />
               Loan History
             </button>
-            <button
-              onClick={() => setActiveTab("details")}
-              className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
-                activeTab === "details"
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}
-            >
-              <UserIcon className="mr-2 h-5 w-5" />
-              Borrower Details
-            </button>
+
             <button
               onClick={() => setActiveTab("newLoan")}
               className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
@@ -403,6 +393,17 @@ export default function BorrowerDetailsPage() {
             >
               <PlusCircleIcon className="mr-2 h-5 w-5" />
               New Loan
+            </button>
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`flex items-center border-b-2 px-4 py-4 text-sm font-medium ${
+                activeTab === "details"
+                  ? "border-indigo-500 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              <UserIcon className="mr-2 h-5 w-5" />
+              Borrower Details
             </button>
           </nav>
         </div>
@@ -624,6 +625,7 @@ export default function BorrowerDetailsPage() {
                         id="principalAmount"
                         name="principalAmount"
                         value={formData.principalAmount}
+                        placeholder="Enter Principal Amount"
                         onChange={handleInputChange}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         required
@@ -643,6 +645,7 @@ export default function BorrowerDetailsPage() {
                         id="interestRate"
                         name="interestRate"
                         value={formData.interestRate}
+                        placeholder="Enter Interest Rate"
                         onChange={handleInputChange}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         required

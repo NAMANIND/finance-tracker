@@ -149,7 +149,7 @@ export async function POST(
               (1 - (Number(interestRate) * Number(termMonths)) / 100)
           ),
           type: "EXPENSE",
-          category: "OTHER",
+          category: "LOAN",
           notes: `Loan disbursement for ${loan.id}`,
         },
       });

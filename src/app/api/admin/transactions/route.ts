@@ -29,13 +29,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!category) {
+      return NextResponse.json(
+        { error: "Category is required" },
+        { status: 400 }
+      );
+    }
+
     // Create the transaction
     const transaction = await prisma.transaction.create({
       data: {
         amount: Number(amount),
         type: type as TransactionType,
-        category: (category ||
-          TransactionCategory.OTHER) as TransactionCategory,
+        category: category as TransactionCategory,
         notes: notes || undefined,
         installmentId: installmentId || undefined,
       },

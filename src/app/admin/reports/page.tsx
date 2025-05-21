@@ -201,10 +201,10 @@ export default function ReportsPage() {
     stats.transactions.forEach((t, index) => {
       // Adjust amount based on transaction type
       let displayAmount = t.amount;
-      if (t.type === "EXPENSE") {
-        displayAmount = -Math.abs(t.amount); // Ensure expenses are negative
-      } else if (t.type === "INSTALLMENT" || t.type === "OTHER") {
-        displayAmount = Math.abs(t.amount); // Ensure installments and other income are positive
+      if (t.type === "EXPENSE" || t.type === "OTHER") {
+        displayAmount = -Math.abs(t.amount); // Ensure expenses and other income are negative
+      } else if (t.type === "INSTALLMENT") {
+        displayAmount = Math.abs(t.amount); // Ensure installments are positive
       }
 
       const row = worksheet.addRow({
