@@ -10,7 +10,20 @@ export function ReportsSkeleton() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 w-[100px] animate-pulse rounded bg-gray-200" />
+            </div>
+            <div className="mt-2">
+              <div className="h-8 w-[120px] animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-lg bg-white p-6 shadow-sm">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="h-4 w-[100px] animate-pulse rounded bg-gray-200" />
