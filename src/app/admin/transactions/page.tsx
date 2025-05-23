@@ -269,13 +269,6 @@ export default function TransactionsPage() {
       }
     }
 
-    if (formData.type === TransactionType.INCOME) {
-      if (!formData.borrowerId) {
-        setFormError("Borrower selection is required");
-        return;
-      }
-    }
-
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("/api/admin/transactions", {
