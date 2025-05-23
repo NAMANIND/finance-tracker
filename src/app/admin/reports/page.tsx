@@ -48,7 +48,7 @@ export default function ReportsPage() {
     to: endOfDay(new Date()),
   });
   const [viewMode, setViewMode] = useState<
-    "daily" | "weekly" | "monthly" | "yearly" | "custom"
+    "daily" | "yesterday" | "weekly" | "monthly" | "yearly" | "custom"
   >("daily");
   const [stats, setStats] = useState<ReportStats>({
     totalProfit: 0,
@@ -73,6 +73,53 @@ export default function ReportsPage() {
   const [pendingDateRange, setPendingDateRange] = useState<
     DateRange | undefined
   >(dateRange);
+
+  const getDateRangeForViewMode = (
+    mode: typeof viewMode
+  ): DateRange | undefined => {
+    const today = new Date();
+    let newDateRange: DateRange | undefined;
+
+    switch (mode) {
+      case "daily":
+        newDateRange = {
+          from: startOfDay(today),
+          to: endOfDay(today),
+        };
+        break;
+      case "yesterday":
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        newDateRange = {
+          from: startOfDay(yesterday),
+          to: endOfDay(yesterday),
+        };
+        break;
+      case "weekly":
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        newDateRange = {
+          from: startOfDay(lastWeek),
+          to: endOfDay(today),
+        };
+        break;
+      case "monthly":
+        newDateRange = {
+          from: startOfDay(new Date(today.getFullYear(), today.getMonth(), 1)),
+          to: endOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
+        };
+        break;
+      case "yearly":
+        newDateRange = {
+          from: startOfDay(new Date(today.getFullYear(), 0, 1)),
+          to: endOfDay(new Date(today.getFullYear(), 11, 31)),
+        };
+        break;
+      case "custom":
+        return undefined;
+    }
+    return newDateRange;
+  };
 
   // Sync input fields when calendar changes (pendingDateRange)
   useEffect(() => {
@@ -129,7 +176,6 @@ export default function ReportsPage() {
   // Fetch transactions for the selected date range
   const fetchTransactions = async (startDate: Date, endDate: Date) => {
     try {
-      setLoading(true);
       const token = localStorage.getItem("token");
       const res = await fetch(
         `/api/admin/reports/transactions?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
@@ -593,8 +639,16 @@ export default function ReportsPage() {
               <Select
                 value={viewMode}
                 onValueChange={(val) => {
-                  setViewMode(val as typeof viewMode);
-                  if (val === "custom") setShowCalendar(true);
+                  const newMode = val as typeof viewMode;
+                  setViewMode(newMode);
+
+                  if (newMode === "custom") {
+                    setShowCalendar(true);
+                    return;
+                  }
+
+                  const newDateRange = getDateRangeForViewMode(newMode);
+                  setDateRange(newDateRange);
                 }}
               >
                 <SelectTrigger className="w-[150px]">
