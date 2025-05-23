@@ -246,7 +246,7 @@ export default function TransactionsPage() {
     }
 
     // it is borrower payment
-    if (formData.type === TransactionType.INCOME) {
+    if (formData.type === TransactionType.INSTALLMENT) {
       if (!formData.borrowerId) {
         setFormError("Borrower selection is required");
         return;
