@@ -132,7 +132,7 @@ export async function POST(
                 principal: isDaily
                   ? principalPerInstallment
                   : principalPerInstallment - interestPerInstallment,
-                interest: isDaily ? interestPerInstallment : 0,
+                interest: interestPerInstallment,
                 installmentAmount: isDaily
                   ? principalPerInstallment + interestPerInstallment
                   : principalPerInstallment,
