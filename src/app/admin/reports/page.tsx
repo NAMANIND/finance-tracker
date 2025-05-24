@@ -21,7 +21,7 @@ import { CalendarIcon, Download } from "lucide-react";
 interface Transaction {
   id: string;
   amount: number;
-  type: "EXPENSE" | "INSTALLMENT" | "OTHER";
+  type: "EXPENSE" | "INSTALLMENT" | "INCOME";
   category: string;
   createdAt: string;
   notes?: string;
@@ -201,21 +201,28 @@ export default function ReportsPage() {
         profit:
           data.transactions
             .filter(
-              (t: Transaction) => t.type === "INSTALLMENT" || t.type === "OTHER"
+              (t: Transaction) =>
+                t.type === "INSTALLMENT" || t.type === "INCOME"
             )
-            .reduce((sum: number, t: Transaction) => sum + t.amount, 0) -
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.amount),
+              0
+            ) -
           data.transactions
             .filter((t: Transaction) => t.type === "EXPENSE")
-            .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.amount),
+              0
+            ),
         expenses: data.transactions
           .filter((t: Transaction) => t.type === "EXPENSE")
-          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+          .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
         installments: data.transactions
           .filter((t: Transaction) => t.type === "INSTALLMENT")
-          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+          .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
         income: data.transactions
-          .filter((t: Transaction) => t.type === "OTHER")
-          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
+          .filter((t: Transaction) => t.type === "INCOME")
+          .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
       };
       setRangeStats(rangeStats);
     } catch (error) {
@@ -241,9 +248,35 @@ export default function ReportsPage() {
     setEditNotes(currentNotes || "");
   };
   const handleEditSave = async (id: string) => {
-    console.log(id, editNotes);
-    // TODO: Implement API call to update notes
-    setEditingId(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/transactions/${id}/notes`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ notes: editNotes }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update notes");
+      }
+
+      // Update the transaction in the local state
+      setStats((prev) => ({
+        ...prev,
+        transactions: prev.transactions.map((t) =>
+          t.id === id ? { ...t, notes: editNotes } : t
+        ),
+      }));
+
+      setEditingId(null);
+      setEditNotes("");
+    } catch (error) {
+      console.error("Error updating notes:", error);
+      // You might want to show an error message to the user here
+    }
   };
   const handleEditCancel = () => {
     setEditingId(null);
@@ -267,11 +300,11 @@ export default function ReportsPage() {
 
     // Set column widths
     worksheet.columns = [
-      { header: "Date", key: "date", width: 15 },
-      { header: "Type", key: "type", width: 15 },
-      { header: "Category", key: "category", width: 15 },
-      { header: "Amount (₹)", key: "amount", width: 20 },
-      { header: "Notes", key: "notes", width: 40 },
+      { key: "date", width: 15 },
+      { key: "type", width: 15 },
+      { key: "category", width: 15 },
+      { key: "amount", width: 20 },
+      { key: "notes", width: 40 },
     ];
 
     // Add title
@@ -321,7 +354,7 @@ export default function ReportsPage() {
     stats.transactions.forEach((t, index) => {
       // Adjust amount based on transaction type
       let displayAmount = t.amount;
-      if (t.type === "EXPENSE" || t.type === "OTHER") {
+      if (t.type === "EXPENSE" || t.type === "INCOME") {
         displayAmount = -Math.abs(t.amount); // Ensure expenses and other income are negative
       } else if (t.type === "INSTALLMENT") {
         displayAmount = Math.abs(t.amount); // Ensure installments are positive
@@ -340,7 +373,7 @@ export default function ReportsPage() {
         totalInstallments += Math.abs(t.amount);
       } else if (t.type === "EXPENSE") {
         totalExpenses += Math.abs(t.amount);
-      } else if (t.type === "OTHER") {
+      } else if (t.type === "INCOME") {
         totalOther += Math.abs(t.amount);
       }
 
@@ -379,7 +412,7 @@ export default function ReportsPage() {
     const summaryRows: [string, number][] = [
       ["Total Installments", totalInstallments],
       ["Total Expenses", -totalExpenses], // Make expenses negative for display
-      ["Total Other Income", totalOther],
+      ["Total Income", totalOther],
       ["Net Profit", totalInstallments + totalOther - totalExpenses],
     ];
 
@@ -798,17 +831,13 @@ export default function ReportsPage() {
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      transaction.type === "INSTALLMENT" ||
-                      transaction.type === "OTHER"
-                        ? "text-green-600"
-                        : "text-red-600"
+                      transaction.type === "EXPENSE"
+                        ? "text-red-600"
+                        : "text-green-600"
                     }`}
                   >
-                    {transaction.type === "INSTALLMENT" ||
-                    transaction.type === "OTHER"
-                      ? "+"
-                      : "-"}
-                    ₹{Math.abs(transaction.amount).toFixed(2)}
+                    {transaction.type === "EXPENSE" ? "-" : "+"}₹
+                    {Math.abs(transaction.amount).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {editingId === transaction.id ? (
@@ -858,17 +887,33 @@ export default function ReportsPage() {
           <tfoot>
             <tr className="bg-gray-100 font-semibold">
               <td className="px-6 py-3" colSpan={3}>
-                Totals
+                Period Totals
               </td>
-              <td className="px-6 py-3 text-green-600">
-                +₹{stats.totalInstallments.toFixed(2)}
+              <td
+                className={`px-6 py-3 ${
+                  rangeStats.installments +
+                    rangeStats.income -
+                    rangeStats.expenses >=
+                  0
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+                colSpan={1}
+              >
+                {rangeStats.installments +
+                  rangeStats.income -
+                  rangeStats.expenses >=
+                0
+                  ? "+"
+                  : "-"}
+                ₹
+                {Math.abs(
+                  rangeStats.installments +
+                    rangeStats.income -
+                    rangeStats.expenses
+                )}
               </td>
-              <td className="px-6 py-3 text-red-600">
-                -₹{stats.totalExpenses.toFixed(2)}
-              </td>
-              <td className="px-6 py-3 text-black">
-                Profit: ₹{stats.totalProfit.toFixed(2)}
-              </td>
+              <td className="px-6 py-3" colSpan={2}></td>
             </tr>
           </tfoot>
         </table>
