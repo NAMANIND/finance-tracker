@@ -21,6 +21,7 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,6 +39,7 @@ interface Loan {
   interestRate: number;
   status: string;
   startDate: string;
+  createdAt: string;
   installments: {
     id: string;
     dueDate: string;
@@ -188,11 +190,11 @@ export default function BorrowerDetailsPage() {
     for (let i = 0; i < numberOfInstallments; i++) {
       const dueDate = new Date(startDate);
       if (isDaily) {
-        dueDate.setDate(dueDate.getDate() + i + 1); // Add 1 day for daily
+        dueDate.setDate(dueDate.getDate() + i); // Add 1 day for daily
       } else if (isWeekly) {
         dueDate.setDate(dueDate.getDate() + i * 7); // Add 7 days for weekly
       } else {
-        dueDate.setMonth(dueDate.getMonth() + i + 1); // Add months for monthly
+        dueDate.setMonth(dueDate.getMonth() + i); // Add months for monthly
       }
 
       // Calculate interest for this installment
@@ -201,16 +203,16 @@ export default function BorrowerDetailsPage() {
       // Calculate principal for this installment
       const principalPayment = remainingPrincipal / (numberOfInstallments - i);
 
-      // Our Principal Amount is the amount given
-
       // Total installment amount
-      const amount = principalPayment;
-      const installmentAmount = principalPayment;
+      const amount = isDaily ? principalPayment + interest : principalPayment;
+      const installmentAmount = isDaily
+        ? principalPayment + interest
+        : principalPayment;
 
       installments.push({
         dueDate: dueDate.toISOString().split("T")[0],
         amount: amount,
-        principal: principalPayment - interest,
+        principal: isDaily ? principalPayment : principalPayment - interest,
         interest: interest,
         installmentAmount: installmentAmount,
       });
@@ -223,7 +225,7 @@ export default function BorrowerDetailsPage() {
       totalAmount: totalAmountToRepay,
       totalInterest,
       actualAmountReceived: principal,
-      amountGiven,
+      amountGiven: isDaily ? amountGiven + totalInterest : amountGiven,
       installments,
     });
   }, [formData]);
@@ -615,9 +617,20 @@ export default function BorrowerDetailsPage() {
                               {loan.status}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-500">
-                            Started on {formatDate(loan.startDate)}
-                          </p>
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                              <ClockIcon className="h-4 w-4 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                Created on {formatDate(loan.createdAt)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="h-4 w-4 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                Started on {formatDate(loan.startDate)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                         <div className="flex items-center">
                           <div className="text-right mr-4">
@@ -858,7 +871,7 @@ export default function BorrowerDetailsPage() {
                       htmlFor="startDate"
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Start Date
+                      EMI Start Date
                     </label>
                     <div className="mt-1">
                       <Input
@@ -958,7 +971,10 @@ export default function BorrowerDetailsPage() {
                         </p>
                         <p className="mt-1 text-lg font-semibold text-gray-900">
                           {formatCurrency(
-                            installmentDetails.actualAmountReceived
+                            formData.repaymentFrequency === "DAILY"
+                              ? installmentDetails.actualAmountReceived +
+                                  installmentDetails.totalInterest
+                              : installmentDetails.actualAmountReceived
                           )}
                         </p>
                       </div>

@@ -119,17 +119,26 @@ export async function POST(
             create: Array.from({ length: numInstallments }, (_, i) => {
               const dueDate = new Date(startDate);
               if (frequency === PaymentFrequency.DAILY) {
-                dueDate.setDate(dueDate.getDate() + i + 1);
+                dueDate.setDate(dueDate.getDate() + i);
               } else if (frequency === PaymentFrequency.WEEKLY) {
-                dueDate.setDate(dueDate.getDate() + (i + 1) * 7);
+                dueDate.setDate(dueDate.getDate() + i * 7);
               } else {
-                dueDate.setMonth(dueDate.getMonth() + i + 1);
+                dueDate.setMonth(dueDate.getMonth() + i);
               }
+
+              const isDaily = frequency === PaymentFrequency.DAILY;
+
               return {
-                principal: principalPerInstallment - interestPerInstallment,
-                interest: interestPerInstallment,
-                installmentAmount: principalPerInstallment,
-                amount: principalPerInstallment,
+                principal: isDaily
+                  ? principalPerInstallment
+                  : principalPerInstallment - interestPerInstallment,
+                interest: isDaily ? interestPerInstallment : 0,
+                installmentAmount: isDaily
+                  ? principalPerInstallment + interestPerInstallment
+                  : principalPerInstallment,
+                amount: isDaily
+                  ? principalPerInstallment + interestPerInstallment
+                  : principalPerInstallment,
                 dueDate,
                 status: "PENDING",
               };
