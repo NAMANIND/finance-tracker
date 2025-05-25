@@ -1278,7 +1278,7 @@ export default function BorrowerDetailsPage() {
                           <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="MONTHLY">Monthly</SelectItem>
+                          {/* <SelectItem value="MONTHLY">Monthly</SelectItem> */}
                           <SelectItem value="WEEKLY">Weekly</SelectItem>
                           <SelectItem value="DAILY">Daily</SelectItem>
                         </SelectContent>
