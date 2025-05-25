@@ -60,14 +60,14 @@ async function main() {
       where: { panId: `PAN${i}123456` },
       update: {
         name: `Borrower ${i}`,
-        fatherName: `Father of Borrower ${i}`,
+        guarantorName: `Father of Borrower ${i}`,
         phone: `9876543${i}00`,
         address: `${i}00 Borrower Street, City`,
         agentId: agents[agentIndex].id,
       },
       create: {
         name: `Borrower ${i}`,
-        fatherName: `Father of Borrower ${i}`,
+        guarantorName: `Father of Borrower ${i}`,
         phone: `9876543${i}00`,
         address: `${i}00 Borrower Street, City`,
         panId: `PAN${i}123456`,

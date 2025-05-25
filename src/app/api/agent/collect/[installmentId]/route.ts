@@ -16,7 +16,20 @@ export async function POST(
     }
 
     const { installmentId } = await params;
-    const { amount, penaltyAmount, extraAmount, notes } = await req.json();
+    const { amount, penaltyAmount, extraAmount, notes, dueAmount, interest } =
+      await req.json();
+
+    // Get agent details from database
+    const agentDetails = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { name: true },
+    });
+
+    if (!agentDetails) {
+      return new NextResponse(JSON.stringify({ error: "Agent not found" }), {
+        status: 404,
+      });
+    }
 
     // Validate required fields
     if (!amount) {
@@ -57,9 +70,7 @@ export async function POST(
 
     // Calculate total amount including penalty and extra
     const totalAmount =
-      Number(amount) +
-      (penaltyAmount ? Number(penaltyAmount) : 0) +
-      (extraAmount ? Number(extraAmount) : 0);
+      Number(amount) + (extraAmount ? Number(extraAmount) : 0);
 
     // Create transaction
     const transaction = await prisma.transaction.create({
@@ -68,7 +79,12 @@ export async function POST(
         type: TransactionType.INSTALLMENT,
         category: TransactionCategory.INSTALLMENT,
         notes: notes || undefined,
+        name: installment.loan.borrower.name,
+        addedBy: agentDetails.name || "AGENT",
         installmentId: installment.id,
+        extraAmount: extraAmount || 0,
+        penaltyAmount: penaltyAmount || 0,
+        interest: interest || 0,
       },
     });
 
@@ -77,6 +93,9 @@ export async function POST(
       where: { id: installment.id },
       data: {
         status: "PAID",
+        dueAmount: dueAmount,
+        extraAmount: extraAmount || 0,
+        penaltyAmount: penaltyAmount || 0,
         paidAt: new Date(),
       },
     });

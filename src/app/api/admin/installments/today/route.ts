@@ -31,9 +31,14 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: {
-        dueDate: "asc",
-      },
+      orderBy: [
+        {
+          status: "asc", // This will put 'PENDING' first since it's alphabetically before other statuses
+        },
+        {
+          dueDate: "asc",
+        },
+      ],
     });
 
     // Format the response

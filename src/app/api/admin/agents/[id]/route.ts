@@ -107,3 +107,47 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verify admin access
+    requireAdmin(req);
+
+    const { id } = await params;
+
+    // First check if agent has any borrowers
+    const agent = await prisma.agent.findUnique({
+      where: { id },
+      include: {
+        borrowers: true,
+      },
+    });
+
+    if (!agent) {
+      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    }
+
+    if (agent.borrowers.length > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete agent with assigned borrowers" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the agent and their associated user
+    await prisma.agent.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: "Agent deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting agent:", error);
+    return NextResponse.json(
+      { error: "Failed to delete agent" },
+      { status: 500 }
+    );
+  }
+}

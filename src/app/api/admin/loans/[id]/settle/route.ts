@@ -18,7 +18,14 @@ export async function POST(
       );
     }
 
-    const { markPendingAsPaid } = await req.json();
+    const {
+      markPendingAsPaid,
+      extraAmount,
+      penaltyAmount,
+      amount,
+      interest,
+      settlementType,
+    } = await req.json();
 
     // Get the loan and its installments
     const loan = await prisma.loan.findUnique({
@@ -40,74 +47,88 @@ export async function POST(
       );
     }
 
-    // Calculate remaining amount
-    const totalAmount = loan.principalAmount;
-    const collectedAmount = loan.installments.reduce(
-      (sum, inst) => sum + inst.amount + inst.extraAmount + inst.penaltyAmount,
-      0
-    );
-    const remainingAmount = totalAmount - collectedAmount;
+    if (settlementType === "AUTOMATIC") {
+      // If there are pending installments and markPendingAsPaid is true
+      if (markPendingAsPaid) {
+        const pendingInstallments = loan.installments.filter(
+          (inst) => inst.status !== "PAID"
+        );
 
-    // If there are pending installments and markPendingAsPaid is true
-    if (markPendingAsPaid) {
-      const pendingInstallments = loan.installments.filter(
+        // Update all pending installments to PAID and create transactions
+        for (const installment of pendingInstallments) {
+          await prisma.$transaction([
+            // Update installment status
+            prisma.installment.update({
+              where: { id: installment.id },
+              data: {
+                status: "PAID",
+                paidAt: new Date(),
+              },
+            }),
+          ]);
+        }
+      } else if (amount > 0) {
+        // If not marking pending as paid and there's remaining amount, create a final installment
+        await prisma.installment.create({
+          data: {
+            loanId: loan.id,
+            dueDate: new Date(),
+            amount: amount,
+            principal: amount,
+            interest: 0,
+            installmentAmount: amount,
+            extraAmount: extraAmount || 0,
+            penaltyAmount: 0,
+            status: "PAID",
+            paidAt: new Date(),
+          },
+        });
+      }
+    } else if (settlementType === "MANUAL") {
+      // get the instlaments which are not paid
+      const unpaidInstallments = loan.installments.filter(
         (inst) => inst.status !== "PAID"
       );
 
-      // Update all pending installments to PAID and create transactions
-      for (const installment of pendingInstallments) {
-        await prisma.$transaction([
-          // Update installment status
-          prisma.installment.update({
-            where: { id: installment.id },
-            data: {
-              status: "PAID",
-              paidAt: new Date(),
-            },
-          }),
-          // Create transaction for the installment
-          prisma.transaction.create({
-            data: {
-              amount:
-                installment.amount +
-                installment.extraAmount +
-                installment.penaltyAmount,
-              type: "INSTALLMENT",
-              category: "INSTALLMENT",
-              notes: `Final settlement for loan ${loan.id}`,
-              installmentId: installment.id,
-            },
-          }),
-        ]);
-      }
-    } else if (remainingAmount > 0) {
-      // If not marking pending as paid and there's remaining amount, create a final installment
-      const finalInstallment = await prisma.installment.create({
+      // update the unpaid installments to PAID
+      // update all of there staute to cancelled
+      await prisma.installment.updateMany({
+        where: { id: { in: unpaidInstallments.map((inst) => inst.id) } },
+        data: { status: "SKIPPED" },
+      });
+
+      // make a new installment with the amount
+      await prisma.installment.create({
         data: {
           loanId: loan.id,
           dueDate: new Date(),
-          amount: remainingAmount,
-          principal: remainingAmount,
-          interest: 0,
-          installmentAmount: remainingAmount,
-          extraAmount: 0,
-          penaltyAmount: 0,
+          amount: amount,
+          principal: amount,
+          interest: interest || 0,
+          installmentAmount: amount,
+          extraAmount: extraAmount || 0,
+          penaltyAmount: penaltyAmount || 0,
           status: "PAID",
           paidAt: new Date(),
         },
       });
-
-      // Create transaction for the final installment
-      await prisma.transaction.create({
-        data: {
-          amount: remainingAmount,
-          type: "INSTALLMENT",
-          category: "INSTALLMENT",
-          notes: `Final settlement for loan ${loan.id}`,
-          installmentId: finalInstallment.id,
-        },
-      });
     }
+
+    // Create transaction for the final installment
+    await prisma.transaction.create({
+      data: {
+        amount: amount,
+        penaltyAmount: penaltyAmount || 0,
+        extraAmount: extraAmount || 0,
+        type: "INSTALLMENT",
+        category: "LOAN",
+        notes: `Final settlement for ${loan.borrower.name} Loan ID: ${loan.id}`,
+        installmentId: loan.installments[loan.installments.length - 1].id,
+        name: loan.borrower.name + " -  SETTLED",
+        interest: interest || 0,
+        addedBy: "ADMIN",
+      },
+    });
 
     // Update loan status to SETTLED
     await prisma.loan.update({

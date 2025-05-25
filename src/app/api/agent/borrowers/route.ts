@@ -87,10 +87,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, fatherName, phone, address, panId } = body;
+    const { name, guarantorName, phone, address, panId } = body;
 
     // Validate required fields
-    if (!name || !fatherName || !phone || !address || !panId) {
+    if (!name || !guarantorName || !phone || !address || !panId) {
       return new NextResponse(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400 }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     const borrower = await prisma.borrower.create({
       data: {
         name,
-        fatherName,
+        guarantorName,
         phone,
         address,
         panId,

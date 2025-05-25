@@ -14,7 +14,7 @@ import {
 interface Borrower {
   id: string;
   name: string;
-  fatherName: string;
+  guarantorName: string;
   phone: string;
 }
 

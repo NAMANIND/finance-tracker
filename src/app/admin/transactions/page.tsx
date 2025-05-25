@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { TransactionType, Loan } from "@prisma/client";
+import { TransactionType, Loan, TransactionCategory } from "@prisma/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +33,7 @@ interface Transaction {
 interface Borrower {
   id: string;
   name: string;
-  fatherName: string;
+  guarantorName: string;
   phone: string;
   address: string;
   panId: string;
@@ -58,20 +58,15 @@ interface NewTransactionForm {
   installmentId?: string;
   amount: number;
   type: TransactionType;
-  category:
-    | "HOME"
-    | "CAR"
-    | "SHOP"
-    | "OFFICE"
-    | "FAMILY"
-    | "PERSONAL"
-    | "INCOME"
-    | "OTHER"
-    | "LOAN";
+  category: TransactionCategory;
   notes: string;
   penaltyAmount?: number;
   extraAmount?: number;
   borrowerId?: string;
+  name?: string;
+  dueAmount?: number;
+  installmentAmount?: string;
+  interest?: number;
 }
 
 export default function TransactionsPage() {
@@ -93,6 +88,10 @@ export default function TransactionsPage() {
     penaltyAmount: 0,
     extraAmount: 0,
     borrowerId: "",
+    name: "ADMIN",
+    dueAmount: 0,
+    installmentAmount: "",
+    interest: 0,
   });
   const [formError, setFormError] = useState("");
   const [activeTab, setActiveTab] = useState("expense");
@@ -159,14 +158,26 @@ export default function TransactionsPage() {
   }, [borrowerSearch, borrowers]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "amount" ? parseFloat(value) : value,
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Calculate due amount only when amount changes
+      if (prev.type === TransactionType.INSTALLMENT && name === "amount") {
+        const installmentAmount = Number(prev.installmentAmount);
+        const enteredAmount = Number(value);
+        // If entered amount exceeds installment amount, cap it at installment amount
+        const finalAmount = Math.min(enteredAmount, installmentAmount);
+        newData.amount = finalAmount;
+        newData.dueAmount = installmentAmount - finalAmount;
+      }
+
+      return newData;
     });
   };
 
@@ -181,6 +192,15 @@ export default function TransactionsPage() {
     if (!borrowerId) {
       setSelectedBorrowerInstallments([]);
       return;
+    }
+
+    // Find the selected borrower to get their name
+    const selectedBorrower = borrowers.find((b) => b.id === borrowerId);
+    if (selectedBorrower) {
+      setFormData((prev) => ({
+        ...prev,
+        name: selectedBorrower.name,
+      }));
     }
 
     try {
@@ -227,7 +247,10 @@ export default function TransactionsPage() {
       loanId: installment.loanId,
       installmentId: installment.id,
       amount: installment.amount,
-      type: TransactionType.EXPENSE,
+      type: TransactionType.INSTALLMENT,
+      installmentAmount: installment.amount.toString(),
+      interest: installment.interest,
+      dueAmount: 0,
     }));
   };
 
@@ -291,10 +314,17 @@ export default function TransactionsPage() {
         installmentId: "",
         amount: 0,
         type: TransactionType.EXPENSE,
-        category: activeTab === "borrower" ? "LOAN" : "PERSONAL",
+        category:
+          activeTab === "borrower"
+            ? TransactionCategory.INSTALLMENT
+            : "PERSONAL",
         notes: "",
         penaltyAmount: 0,
         extraAmount: 0,
+        name: "ADMIN",
+        dueAmount: 0,
+        installmentAmount: "",
+        interest: 0,
       });
 
       setSelectedBorrowerInstallments([]);
@@ -386,7 +416,7 @@ export default function TransactionsPage() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {transaction.borrowerName || transaction.category}
+                        {transaction.category} - {transaction.borrowerName}
                       </p>
                       <p className="text-sm text-gray-500">
                         {formatDate(transaction.createdAt)}
@@ -428,6 +458,7 @@ export default function TransactionsPage() {
                     category: "PERSONAL",
                     amount: 0,
                     notes: "",
+                    name: "ADMIN",
                   }));
 
                   setFormError("");
@@ -441,8 +472,8 @@ export default function TransactionsPage() {
                   setActiveTab("borrower");
                   setFormData((prev) => ({
                     ...prev,
-                    type: TransactionType.EXPENSE,
-                    category: "LOAN",
+                    type: TransactionType.INSTALLMENT,
+                    category: TransactionCategory.INSTALLMENT,
                     amount: 0,
                     notes: "",
                   }));
@@ -494,16 +525,12 @@ export default function TransactionsPage() {
                   </label>
                   <Select
                     value={formData.category}
-                    onValueChange={(
-                      value:
-                        | "HOME"
-                        | "CAR"
-                        | "SHOP"
-                        | "OFFICE"
-                        | "FAMILY"
-                        | "PERSONAL"
-                        | "OTHER"
-                    ) => setFormData((prev) => ({ ...prev, category: value }))}
+                    onValueChange={(value: TransactionCategory) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        category: value as TransactionCategory,
+                      }))
+                    }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select category" />
@@ -511,10 +538,15 @@ export default function TransactionsPage() {
                     <SelectContent>
                       <SelectItem value="HOME">Home</SelectItem>
                       <SelectItem value="CAR">Car</SelectItem>
-                      <SelectItem value="SHOP">Shop</SelectItem>
+
                       <SelectItem value="OFFICE">Office</SelectItem>
-                      <SelectItem value="FAMILY">Family</SelectItem>
+
                       <SelectItem value="PERSONAL">Personal</SelectItem>
+                      <SelectItem value="EMI">EMI</SelectItem>
+                      <SelectItem value="INTEREST">Interest</SelectItem>
+                      <SelectItem value="FARM">Farm</SelectItem>
+                      <SelectItem value="BHOPAL">Bhopal</SelectItem>
+                      <SelectItem value="SAI_BABA">Sai Baba</SelectItem>
                       <SelectItem value="OTHER">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -632,39 +664,47 @@ export default function TransactionsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Pending Installments
                     </label>
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
                       {selectedBorrowerInstallments.map((installment) => (
                         <button
                           key={installment.id}
                           type="button"
                           onClick={() => handleInstallmentSelect(installment)}
-                          className={`p-3 text-left rounded-lg border ${
+                          className={`p-2.5 text-left rounded-lg border transition-all duration-200 ${
                             formData.installmentId === installment.id
-                              ? "border-indigo-500 bg-indigo-50"
-                              : "border-gray-200 hover:border-indigo-300"
+                              ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                              : "border-gray-200 hover:border-indigo-300 hover:shadow-sm"
                           }`}
                         >
-                          <div className="font-medium">
-                            ₹{installment?.amount?.toLocaleString() || "0"}
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-medium text-base">
+                              ₹{installment?.amount?.toLocaleString() || "0"}
+                            </div>
+                            <div
+                              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                installment.status === "OVERDUE"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {installment.status}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            Due:{" "}
-                            {new Date(installment.dueDate).toLocaleDateString()}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Principal: ₹{installment.principal.toLocaleString()}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Interest: ₹{installment.interest.toLocaleString()}
-                          </div>
-                          <div
-                            className={`mt-1 text-xs font-medium ${
-                              installment.status === "OVERDUE"
-                                ? "text-red-600"
-                                : "text-yellow-600"
-                            }`}
-                          >
-                            {installment.status}
+                          <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
+                            <div>
+                              <span className="text-gray-500">Due:</span>{" "}
+                              {new Date(
+                                installment.dueDate
+                              ).toLocaleDateString()}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Principal:</span>{" "}
+                              ₹{installment.principal.toLocaleString()}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Interest:</span> ₹
+                              {installment.interest.toLocaleString()}
+                            </div>
                           </div>
                         </button>
                       ))}
@@ -688,8 +728,14 @@ export default function TransactionsPage() {
                     onChange={handleInputChange}
                     required
                     min="0"
+                    max={formData.installmentAmount}
                     step="0.01"
                   />
+                  {formData.installmentId && (
+                    <p className="mt-1 text-sm text-gray-500">
+                      Due Amount: ₹{Number(formData.dueAmount).toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -743,19 +789,20 @@ export default function TransactionsPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Base Amount:</span>
                       <span className="font-medium">
-                        ₹{formData.amount.toLocaleString()}
+                        ₹{Number(formData.amount).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Penalty Amount:</span>
-                      <span className="font-medium">
-                        ₹{(formData.penaltyAmount || 0).toLocaleString()}
-                      </span>
-                    </div>
+
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Extra Amount:</span>
                       <span className="font-medium">
-                        ₹{(formData.extraAmount || 0).toLocaleString()}
+                        ₹{Number(formData.extraAmount || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Due Amount:</span>
+                      <span className="font-medium">
+                        ₹{Number(formData.dueAmount || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="border-t border-gray-200 pt-2">
@@ -765,7 +812,6 @@ export default function TransactionsPage() {
                           ₹
                           {(
                             Number(formData.amount || 0) +
-                            Number(formData.penaltyAmount || 0) +
                             Number(formData.extraAmount || 0)
                           ).toLocaleString()}
                         </span>

@@ -20,7 +20,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(transactions);
+    // Transform the data to include borrowerName directly
+    const transformedTransactions = transactions.map((transaction) => ({
+      ...transaction,
+      borrowerName: transaction.name || "Unknown",
+    }));
+
+    return NextResponse.json(transformedTransactions);
   } catch (error) {
     console.error("Error fetching today's transactions:", error);
     return NextResponse.json(

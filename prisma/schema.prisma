@@ -35,9 +35,12 @@ enum PaymentStatus {
 enum TransactionCategory {
   HOME
   CAR
-  SHOP
   OFFICE
-  FAMILY
+  EMI
+  INTEREST
+  FARM
+  BHOPAL
+  SAI_BABA
   PERSONAL
   INSTALLMENT
   INCOME
@@ -85,17 +88,17 @@ model Agent {
 }
 
 model Borrower {
-  id         String   @id @default(cuid())
-  name       String
-  fatherName String
-  phone      String
-  address    String
-  panId      String   @unique
-  agentId    String
-  agent      Agent    @relation("AgentBorrowers", fields: [agentId], references: [id])
-  loans      Loan[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  guarantorName String
+  phone         String
+  address       String
+  panId         String   @unique
+  agentId       String
+  agent         Agent    @relation("AgentBorrowers", fields: [agentId], references: [id])
+  loans         Loan[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([name, phone])
   @@index([agentId])
@@ -141,6 +144,7 @@ model Installment {
   updatedAt         DateTime      @updatedAt
   extraAmount       Float         @default(0)
   penaltyAmount     Float         @default(0)
+  dueAmount         Float         @default(0)
 
   @@index([loanId])
   @@index([dueDate, status])
@@ -150,13 +154,18 @@ model Installment {
 }
 
 model Transaction {
-  id        String              @id @default(cuid())
-  amount    Float
-  type      TransactionType     @default(OTHER)
-  category  TransactionCategory @default(OTHER)
-  notes     String?
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id            String              @id @default(cuid())
+  amount        Float
+  type          TransactionType     @default(OTHER)
+  category      TransactionCategory @default(OTHER)
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  name          String?             @default("")
+  addedBy       String?             @default("ADMIN")
+  penaltyAmount Float               @default(0)
+  extraAmount   Float               @default(0)
+  interest      Float               @default(0)
 
   // Relations
   installment   Installment? @relation(fields: [installmentId], references: [id])

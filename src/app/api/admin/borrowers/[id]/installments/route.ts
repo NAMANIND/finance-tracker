@@ -36,7 +36,7 @@ export async function GET(
       },
     });
 
-    const installments = [pendingInstallment, ...overdueInstallments];
+    const installments = [...overdueInstallments, pendingInstallment];
 
     const formattedInstallments = installments.map((installment) => ({
       ...installment,

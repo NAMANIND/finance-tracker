@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,8 @@ interface AgentStats {
   totalActiveLoans: number;
   totalCollectedThisMonth: number;
   totalProfit: number;
+  totalDueAmount: number;
+  totalDueCount: number;
   duesToday: {
     borrower: {
       name: string;
@@ -38,95 +41,82 @@ interface Borrower {
 }
 
 interface CollectionFormData {
-  amount: string;
-  penaltyAmount: string;
-  extraAmount: string;
+  dueAmount: number;
+  amount: number;
+  penaltyAmount: number;
+  extraAmount: number;
   notes: string;
   installmentId: string;
+  installmentAmount: string;
+  interest: number;
 }
 
 export default function AgentDashboard() {
-  const [stats, setStats] = useState<AgentStats>({
-    totalBorrowers: 0,
-    totalActiveLoans: 0,
-    totalCollectedThisMonth: 0,
-    totalProfit: 0,
-    duesToday: [],
-  });
-  const [borrowers, setBorrowers] = useState<Borrower[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"collections" | "clients">(
-    "collections"
-  );
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<
+    "collections" | "clients" | "dues"
+  >("collections");
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
-
   const [formData, setFormData] = useState<CollectionFormData>({
-    amount: "",
-    penaltyAmount: "",
-    extraAmount: "",
+    dueAmount: 0,
+    amount: 0,
+    penaltyAmount: 0,
+    extraAmount: 0,
     notes: "",
     installmentId: "",
+    installmentAmount: "",
+    interest: 0,
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const statsRes = await fetch("/api/agent/stats", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["agentStats"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const statsRes = await fetch("/api/agent/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!statsRes.ok) {
-          throw new Error("Failed to fetch stats");
-        }
-
-        const statsData = await statsRes.json();
-        setStats(statsData);
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setLoading(false);
+      if (!statsRes.ok) {
+        throw new Error("Failed to fetch stats");
       }
-    };
 
-    fetchData();
-  }, []);
+      return statsRes.json();
+    },
+  });
 
-  useEffect(() => {
-    if (activeTab === "clients") {
-      const fetchBorrowers = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const borrowersRes = await fetch("/api/agent/borrowers", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+  const { data: borrowers, isLoading: borrowersLoading } = useQuery({
+    queryKey: ["agentBorrowers"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const borrowersRes = await fetch("/api/agent/borrowers", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-          if (!borrowersRes.ok) {
-            throw new Error("Failed to fetch borrowers");
-          }
+      if (!borrowersRes.ok) {
+        throw new Error("Failed to fetch borrowers");
+      }
 
-          const borrowersData = await borrowersRes.json();
-          setBorrowers(borrowersData);
-        } catch (error) {
-          console.error("Error fetching borrowers:", error);
-        }
-      };
+      return borrowersRes.json();
+    },
+    enabled: activeTab === "clients",
+  });
 
-      fetchBorrowers();
-    }
-  }, [activeTab]);
+  const loading = statsLoading || (activeTab === "clients" && borrowersLoading);
 
   const handleCollectClick = (due: AgentStats["duesToday"][0]) => {
     setFormData({
-      amount: due.amount.toString(),
-      penaltyAmount: "",
-      extraAmount: "",
+      dueAmount: 0,
+      amount: due.amount,
+      penaltyAmount: 0,
+      extraAmount: 0,
       notes: "",
       installmentId: due.installmentId,
+      installmentAmount: due.amount.toString(),
+      interest: due.interest,
     });
     setShowCollectionDialog(true);
   };
@@ -135,10 +125,24 @@ export default function AgentDashboard() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Calculate due amount only when amount changes
+      if (name === "amount") {
+        const installmentAmount = Number(prev.installmentAmount);
+        const enteredAmount = Number(value);
+        // If entered amount exceeds installment amount, cap it at installment amount
+        const finalAmount = Math.min(enteredAmount, installmentAmount);
+        newData.amount = finalAmount;
+        newData.dueAmount = installmentAmount - finalAmount;
+      }
+
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,6 +159,8 @@ export default function AgentDashboard() {
           amount: Number(formData.amount),
           penaltyAmount: Number(formData.penaltyAmount) || 0,
           extraAmount: Number(formData.extraAmount) || 0,
+          dueAmount: Number(formData.dueAmount) || 0,
+          interest: Number(formData.interest) || 0,
           notes: formData.notes,
         }),
       });
@@ -164,7 +170,9 @@ export default function AgentDashboard() {
       }
 
       setShowCollectionDialog(false);
-      window.location.reload();
+      // refetch stats
+      await queryClient.invalidateQueries({ queryKey: ["agentStats"] });
+      await queryClient.invalidateQueries({ queryKey: ["agentBorrowers"] });
     } catch (error) {
       console.error("Error collecting payment:", error);
       alert("Failed to collect payment");
@@ -194,7 +202,7 @@ export default function AgentDashboard() {
             Assigned Clients
           </dt>
           <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.totalBorrowers}
+            {stats?.totalBorrowers}
           </dd>
         </div>
 
@@ -204,7 +212,27 @@ export default function AgentDashboard() {
             Active Loans
           </dt>
           <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.totalActiveLoans}
+            {stats?.totalActiveLoans}
+          </dd>
+        </div>
+
+        {/* Total Due Amount */}
+        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
+          <dt className="truncate text-sm font-medium text-gray-500">
+            Total Due Amount
+          </dt>
+          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            ₹{stats?.totalDueAmount?.toLocaleString()}
+          </dd>
+        </div>
+
+        {/* Total Due Count */}
+        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
+          <dt className="truncate text-sm font-medium text-gray-500">
+            Total Due Count
+          </dt>
+          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            {stats?.totalDueCount}
           </dd>
         </div>
       </div>
@@ -226,6 +254,16 @@ export default function AgentDashboard() {
             Today&apos;s Collections
           </button>
           <button
+            onClick={() => setActiveTab("dues")}
+            className={`whitespace-nowrap border-b-2 py-3 sm:py-4 px-1 text-sm font-medium ${
+              activeTab === "dues"
+                ? "border-indigo-500 text-indigo-600"
+                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            }`}
+          >
+            All Dues
+          </button>
+          <button
             onClick={() => setActiveTab("clients")}
             className={`whitespace-nowrap border-b-2 py-3 sm:py-4 px-1 text-sm font-medium ${
               activeTab === "clients"
@@ -243,7 +281,7 @@ export default function AgentDashboard() {
         {activeTab === "collections" ? (
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <ul role="list" className="divide-y divide-gray-200">
-              {stats.duesToday.map((due) => (
+              {stats?.duesToday.map((due: AgentStats["duesToday"][0]) => (
                 <li key={due.installmentId} className="px-4 sm:px-6 py-4">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
@@ -270,17 +308,6 @@ export default function AgentDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center justify-end border-t border-gray-100 pt-3">
-                      {/* <div className="text-sm text-gray-500">
-                        <span className="font-medium text-gray-900">
-                          Principal:
-                        </span>{" "}
-                        ₹{(due.principal || 0).toLocaleString()}
-                        <span className="mx-2">•</span>
-                        <span className="font-medium text-gray-900">
-                          Interest:
-                        </span>{" "}
-                        ₹{(due.interest || 0).toLocaleString()}
-                      </div> */}
                       <button
                         onClick={() => handleCollectClick(due)}
                         className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500  focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -291,9 +318,66 @@ export default function AgentDashboard() {
                   </div>
                 </li>
               ))}
-              {stats.duesToday.length === 0 && (
+              {stats?.duesToday.length === 0 && (
                 <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
                   No collections due today
+                </li>
+              )}
+            </ul>
+          </div>
+        ) : activeTab === "dues" ? (
+          <div className="overflow-hidden rounded-lg bg-white shadow">
+            <ul role="list" className="divide-y divide-gray-200">
+              {stats?.duesToday.map((due: AgentStats["duesToday"][0]) => (
+                <li key={due.installmentId} className="px-4 sm:px-6 py-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
+                          <span className="text-lg font-medium text-indigo-600">
+                            {due.borrower.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-base font-medium text-gray-900">
+                            {due.borrower.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {due.borrower.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-gray-900">
+                          ₹{due.amount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Due on {new Date(due.dueDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                        {Math.ceil(
+                          (new Date().getTime() -
+                            new Date(due.dueDate).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}{" "}
+                        days late
+                      </span>
+                      <button
+                        onClick={() => handleCollectClick(due)}
+                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      >
+                        Collect Payment for {due.borrower.name}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+              {stats?.duesToday.length === 0 && (
+                <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
+                  No dues found
                 </li>
               )}
             </ul>
@@ -301,7 +385,7 @@ export default function AgentDashboard() {
         ) : (
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <ul role="list" className="divide-y divide-gray-200">
-              {borrowers.map((borrower) => (
+              {borrowers?.map((borrower: Borrower) => (
                 <li key={borrower.id} className="px-4 sm:px-6 py-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
@@ -316,7 +400,7 @@ export default function AgentDashboard() {
                   </div>
                 </li>
               ))}
-              {borrowers.length === 0 && (
+              {borrowers?.length === 0 && (
                 <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
                   No clients assigned
                 </li>
@@ -347,14 +431,18 @@ export default function AgentDashboard() {
                 type="number"
                 id="amount"
                 name="amount"
-                value={formData.amount}
+                value={formData.amount || ""}
                 onChange={handleInputChange}
                 required
                 min="0"
+                max={formData.installmentAmount}
                 step="0.01"
                 placeholder="Enter payment amount"
                 className="mt-1"
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Due Amount: ₹{Number(formData.dueAmount).toLocaleString()}
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-2">
@@ -369,7 +457,7 @@ export default function AgentDashboard() {
                   type="number"
                   id="penaltyAmount"
                   name="penaltyAmount"
-                  value={formData.penaltyAmount}
+                  value={formData.penaltyAmount || ""}
                   onChange={handleInputChange}
                   placeholder="Enter penalty amount"
                   min="0"
@@ -389,7 +477,7 @@ export default function AgentDashboard() {
                   type="number"
                   id="extraAmount"
                   name="extraAmount"
-                  value={formData.extraAmount}
+                  value={formData.extraAmount || ""}
                   onChange={handleInputChange}
                   placeholder="Enter extra amount"
                   min="0"
@@ -408,12 +496,6 @@ export default function AgentDashboard() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Penalty Amount:</span>
-                  <span className="font-medium">
-                    ₹{Number(formData.penaltyAmount || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Extra Amount:</span>
                   <span className="font-medium">
                     ₹{Number(formData.extraAmount || 0).toLocaleString()}
@@ -426,7 +508,6 @@ export default function AgentDashboard() {
                       ₹
                       {(
                         Number(formData.amount || 0) +
-                        Number(formData.penaltyAmount || 0) +
                         Number(formData.extraAmount || 0)
                       ).toLocaleString()}
                     </span>

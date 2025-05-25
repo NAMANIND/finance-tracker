@@ -12,13 +12,23 @@ import {
   UserGroupIcon,
   CreditCardIcon,
   XMarkIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import { AgentDetailsSkeleton } from "@/components/dashboard/AgentDetailsSkeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 interface Borrower {
   id: string;
   name: string;
-  fatherName: string;
+  guarantorName: string;
   phone: string;
   address: string;
   panId: string;
@@ -42,6 +52,8 @@ export default function AgentPage() {
   const [selectedBorrowers, setSelectedBorrowers] = useState<Borrower[]>([]);
   const [availableBorrowers, setAvailableBorrowers] = useState<Borrower[]>([]);
   const [borrowerSearchTerm, setBorrowerSearchTerm] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const fetchAgentDetails = async () => {
@@ -147,6 +159,30 @@ export default function AgentPage() {
     }
   };
 
+  const handleDeleteAgent = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/agents/${params.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete agent");
+      }
+
+      router.push("/admin/agents");
+    } catch (error) {
+      console.error("Error deleting agent:", error);
+      setDeleteError(
+        error instanceof Error ? error.message : "Failed to delete agent"
+      );
+    }
+  };
+
   const filteredBorrowers = agent?.borrowers.filter(
     (borrower) =>
       borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,13 +214,15 @@ export default function AgentPage() {
               <p className="text-sm text-gray-500">ID: {agent.id}</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowAddBorrowerModal(true)}
-            className="flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-          >
-            <PlusCircleIcon className="mr-2 h-5 w-5" />
-            Add Borrower
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowAddBorrowerModal(true)}
+              className="flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+            >
+              <PlusCircleIcon className="mr-2 h-5 w-5" />
+              Add Borrower
+            </button>
+          </div>
         </div>
       </div>
 
@@ -260,30 +298,18 @@ export default function AgentPage() {
                   {agent.commissionRate}%
                 </p>
               </div>
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h3 className="mb-2 text-sm font-medium text-gray-500">
-                  Performance Summary
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">Total Borrowers</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {agent.borrowers.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Active Loans</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {agent.borrowers.reduce(
-                        (acc, borrower) =>
-                          acc +
-                          borrower.loans.filter(
-                            (loan) => loan.status === "ACTIVE"
-                          ).length,
-                        0
-                      )}
-                    </p>
-                  </div>
+              <div className="col-span-2">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-4 text-sm font-medium text-gray-500">
+                    Actions
+                  </h3>
+                  <button
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+                  >
+                    <TrashIcon className="mr-2 h-5 w-5" />
+                    Delete Agent
+                  </button>
                 </div>
               </div>
             </div>
@@ -594,6 +620,47 @@ export default function AgentPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Agent</DialogTitle>
+            <DialogDescription>
+              {deleteError ? (
+                <div className="text-red-600">{deleteError}</div>
+              ) : (
+                <>
+                  Are you sure you want to delete this agent? This action cannot
+                  be undone.
+                  {agent.borrowers.length > 0 && (
+                    <div className="mt-2 text-yellow-600">
+                      Warning: This agent has {agent.borrowers.length} borrowers
+                      assigned. You must reassign these borrowers before
+                      deleting the agent.
+                    </div>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() => setShowDeleteDialog(false)}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteAgent}
+              disabled={agent.borrowers.length > 0}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

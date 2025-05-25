@@ -26,7 +26,7 @@ import { BorrowersSkeleton } from "@/components/dashboard/BorrowersSkeleton";
 interface Borrower {
   id: string;
   name: string;
-  fatherName: string;
+  guarantorName: string;
   phone: string;
   address: string;
   panId: string;
@@ -50,7 +50,7 @@ export default function BorrowersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
-    fatherName: "",
+    guarantorName: "",
     phone: "",
     address: "",
     panId: "",
@@ -133,7 +133,7 @@ export default function BorrowersPage() {
       // Reset form and close modal
       setFormData({
         name: "",
-        fatherName: "",
+        guarantorName: "",
         phone: "",
         address: "",
         panId: "",
@@ -254,20 +254,20 @@ export default function BorrowersPage() {
 
                         <div>
                           <label
-                            htmlFor="fatherName"
+                            htmlFor="guarantorName"
                             className="block text-sm font-medium text-gray-700"
                           >
-                            Father&apos;s name
+                            Guarantor&apos;s name
                           </label>
                           <Input
                             type="text"
-                            name="fatherName"
-                            id="fatherName"
-                            value={formData.fatherName}
+                            name="guarantorName"
+                            id="guarantorName"
+                            value={formData.guarantorName}
                             onChange={(e) =>
                               setFormData({
                                 ...formData,
-                                fatherName: e.target.value,
+                                guarantorName: e.target.value,
                               })
                             }
                             required

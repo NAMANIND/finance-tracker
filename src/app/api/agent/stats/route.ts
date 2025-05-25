@@ -101,17 +101,28 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Get total due amount and count
+    const totalDues = await prisma.installment.aggregate({
+      where: {
+        loan: {
+          borrower: { agentId: agent.id },
+        },
+        status: "OVERDUE",
+      },
+      _sum: {
+        principal: true,
+        interest: true,
+      },
+      _count: true,
+    });
+
     // Get dues for today
     const duesToday = await prisma.installment.findMany({
       where: {
         loan: {
           borrower: { agentId: agent.id },
         },
-        dueDate: {
-          gte: today,
-          lt: tomorrow,
-        },
-        status: "PENDING",
+        status: "OVERDUE",
       },
       select: {
         id: true,
@@ -144,12 +155,16 @@ export async function GET(request: NextRequest) {
         (monthCollections._sum.principal || 0) +
         (monthCollections._sum.interest || 0),
       totalProfit: totalProfit._sum.interest || 0,
+      totalDueAmount:
+        (totalDues._sum.principal || 0) + (totalDues._sum.interest || 0),
+      totalDueCount: totalDues._count || 0,
       duesToday: duesToday.map((due) => ({
         borrower: due.loan.borrower,
         amount: due.principal + due.interest,
         dueDate: due.dueDate.toISOString(),
         loanId: due.loan.id,
         installmentId: due.id,
+        interest: due.interest,
       })),
     });
   } catch (error) {

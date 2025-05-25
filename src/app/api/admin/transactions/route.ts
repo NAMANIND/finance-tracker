@@ -4,9 +4,33 @@ import { TransactionType, TransactionCategory } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
-    const { amount, type, category, notes, installmentId } = await req.json();
+    const {
+      amount,
+      type,
+      category,
+      notes,
+      name,
+      installmentId,
+      addedBy,
+      penaltyAmount,
+      extraAmount,
+      dueAmount,
+      interest,
+    } = await req.json();
 
-    console.log(amount, type, category, notes, installmentId);
+    console.log(
+      amount,
+      type,
+      category,
+      notes,
+      name,
+      installmentId,
+      addedBy,
+      penaltyAmount,
+      extraAmount,
+      dueAmount,
+      interest
+    );
 
     // Validate required fields
     if (!amount || !type) {
@@ -36,14 +60,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate total amount including penalty and extra
+    const totalAmount =
+      Number(amount) + (extraAmount ? Number(extraAmount) : 0);
+
     // Create the transaction
     const transaction = await prisma.transaction.create({
       data: {
-        amount: Number(amount),
+        amount: totalAmount,
         type: type as TransactionType,
         category: category as TransactionCategory,
         notes: notes || undefined,
         installmentId: installmentId || undefined,
+        name: name || undefined,
+        addedBy: addedBy || undefined,
+        penaltyAmount: penaltyAmount ? Number(penaltyAmount) : 0,
+        extraAmount: extraAmount ? Number(extraAmount) : 0,
+        interest: interest ? Number(interest) : 0,
       },
       include: {
         installment: true,
@@ -54,7 +87,13 @@ export async function POST(req: NextRequest) {
     if (type === TransactionType.INSTALLMENT && installmentId) {
       await prisma.installment.update({
         where: { id: installmentId },
-        data: { status: "PAID" },
+        data: {
+          status: "PAID",
+          dueAmount: dueAmount ? Number(dueAmount) : 0,
+          penaltyAmount: penaltyAmount ? Number(penaltyAmount) : 0,
+          extraAmount: extraAmount ? Number(extraAmount) : 0,
+          paidAt: new Date(),
+        },
       });
     }
 

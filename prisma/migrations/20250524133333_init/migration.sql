@@ -1,46 +1,17 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'AGENT');
 
-  - You are about to drop the `Agent` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Borrower` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Installment` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Loan` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Transaction` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
+-- CreateEnum
+CREATE TYPE "PaymentFrequency" AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY');
 
-*/
--- DropForeignKey
-ALTER TABLE "Agent" DROP CONSTRAINT "Agent_userId_fkey";
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'OVERDUE', 'SKIPPED');
 
--- DropForeignKey
-ALTER TABLE "Borrower" DROP CONSTRAINT "Borrower_agentId_fkey";
+-- CreateEnum
+CREATE TYPE "TransactionCategory" AS ENUM ('HOME', 'CAR', 'OFFICE', 'EMI', 'INTEREST', 'FARM', 'BHOPAL', 'SAI_BABA', 'PERSONAL', 'INSTALLMENT', 'INCOME', 'LOAN', 'OTHER');
 
--- DropForeignKey
-ALTER TABLE "Installment" DROP CONSTRAINT "Installment_loanId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Loan" DROP CONSTRAINT "Loan_borrowerId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Transaction" DROP CONSTRAINT "Transaction_installmentId_fkey";
-
--- DropTable
-DROP TABLE "Agent";
-
--- DropTable
-DROP TABLE "Borrower";
-
--- DropTable
-DROP TABLE "Installment";
-
--- DropTable
-DROP TABLE "Loan";
-
--- DropTable
-DROP TABLE "Transaction";
-
--- DropTable
-DROP TABLE "User";
+-- CreateEnum
+CREATE TYPE "TransactionType" AS ENUM ('EXPENSE', 'INSTALLMENT', 'INCOME', 'OTHER');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -72,7 +43,7 @@ CREATE TABLE "agents" (
 CREATE TABLE "borrowers" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "fatherName" TEXT NOT NULL,
+    "guarantorName" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "panId" TEXT NOT NULL,
@@ -110,7 +81,6 @@ CREATE TABLE "installments" (
     "amount" DOUBLE PRECISION NOT NULL,
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "paidAt" TIMESTAMP(3),
-    "penalty" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "extraAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -128,6 +98,7 @@ CREATE TABLE "transactions" (
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "name" TEXT DEFAULT '',
     "installmentId" TEXT,
 
     CONSTRAINT "transactions_pkey" PRIMARY KEY ("id")

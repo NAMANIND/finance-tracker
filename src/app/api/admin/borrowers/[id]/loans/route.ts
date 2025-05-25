@@ -98,14 +98,16 @@ export async function POST(
     const principalPerInstallment = principalAmount / numInstallments;
     const interestPerInstallment = totalInterest / numInstallments;
 
-    // Helper to determine transaction amount sign
-    function getTransactionAmount(amount: number) {
-      return amount;
-    }
-
     // Create loan with installments and transaction in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create loan with installments
+      // fetch the borrower for that if
+      const borrower = await tx.borrower.findUnique({
+        where: {
+          id: (await params).id,
+        },
+      });
+
       const loan = await tx.loan.create({
         data: {
           borrowerId: (await params).id,
@@ -153,13 +155,17 @@ export async function POST(
       // Create transaction record for the loan
       await tx.transaction.create({
         data: {
-          amount: getTransactionAmount(
-            Number(principalAmount) *
-              (1 - (Number(interestRate) * Number(termMonths)) / 100)
-          ),
+          amount:
+            frequency === PaymentFrequency.DAILY
+              ? Number(principalAmount)
+              : Number(principalAmount) *
+                (1 - (Number(interestRate) * Number(termMonths)) / 100),
           type: "EXPENSE",
           category: "LOAN",
-          notes: `Loan disbursement for ${loan.id}`,
+          notes: `Loan disbursement for ${borrower?.name} Loan ID: ${loan.id}`,
+          name: borrower?.name,
+          addedBy: "ADMIN",
+          installmentId: loan.installments[0].id,
         },
       });
 

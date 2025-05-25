@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 interface Borrower {
   id: string;
   name: string;
-  fatherName: string;
+  guarantorName: string;
   phone: string;
   panId: string;
   address: string;
@@ -189,7 +189,7 @@ export default function NewBorrowerPage() {
                             {borrower.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {borrower.fatherName}
+                            {borrower.guarantorName}
                           </div>
                         </div>
                       </div>

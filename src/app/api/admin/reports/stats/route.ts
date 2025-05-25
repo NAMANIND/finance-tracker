@@ -20,9 +20,10 @@ export async function GET(req: NextRequest) {
     });
 
     // Calculate statistics using all transactions
-    const totalInstallments = allTransactions
+
+    const totalInstallmetnsInterest = allTransactions
       .filter((t) => t.type === "INSTALLMENT")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + t.interest, 0);
 
     const totalExpenses = allTransactions
       .filter((t) => t.type === "EXPENSE")
@@ -32,12 +33,12 @@ export async function GET(req: NextRequest) {
       .filter((t) => t.type === "INCOME")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalProfit = totalInstallments + totalIncome - totalExpenses;
+    const totalProfit = totalInstallmetnsInterest + totalIncome - totalExpenses;
 
     return NextResponse.json({
       totalProfit,
       totalExpenses,
-      totalInstallments,
+      totalInstallmetnsInterest,
       totalIncome,
     });
   } catch (error) {

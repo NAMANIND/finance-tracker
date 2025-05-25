@@ -18,7 +18,7 @@ export default function NewBorrower() {
     const formData = new FormData(e.currentTarget);
     const data = {
       name: formData.get("name"),
-      fatherName: formData.get("fatherName"),
+      guarantorName: formData.get("guarantorName"),
       phone: formData.get("phone"),
       address: formData.get("address"),
       panId: formData.get("panId"),
@@ -92,16 +92,16 @@ export default function NewBorrower() {
 
           <div>
             <label
-              htmlFor="fatherName"
+              htmlFor="guarantorName"
               className="block text-sm font-medium text-gray-700"
             >
-              Father&apos;s Name
+              Guarantor&apos;s Name
             </label>
             <div className="mt-1">
               <Input
                 type="text"
-                name="fatherName"
-                id="fatherName"
+                name="guarantorName"
+                id="guarantorName"
                 required
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />

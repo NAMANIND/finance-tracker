@@ -55,7 +55,7 @@ async function main() {
   const borrowers = [
     {
       name: "John Doe",
-      fatherName: "James Doe",
+      guarantorName: "James Doe",
       phone: "1234567890",
       address: "123 Main St",
       panId: "ABCDE1234F",
@@ -127,7 +127,7 @@ async function main() {
     },
     {
       name: "Jane Smith",
-      fatherName: "John Smith",
+      guarantorName: "John Smith",
       phone: "9876543210",
       address: "456 Oak St",
       panId: "FGHIJ5678K",
@@ -182,7 +182,7 @@ async function main() {
     },
     {
       name: "Bob Johnson",
-      fatherName: "Robert Johnson",
+      guarantorName: "Robert Johnson",
       phone: "5555555555",
       address: "789 Pine St",
       panId: "LMNOP9012Q",
@@ -261,7 +261,7 @@ async function main() {
       prisma.borrower.create({
         data: {
           name: borrowerData.name,
-          fatherName: borrowerData.fatherName,
+          guarantorName: borrowerData.guarantorName,
           phone: borrowerData.phone,
           address: borrowerData.address,
           panId: borrowerData.panId,

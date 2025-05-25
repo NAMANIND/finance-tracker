@@ -28,6 +28,11 @@ export async function GET(request: NextRequest) {
       _sum: { interest: true },
     });
 
+    const totalDue = await prisma.installment.aggregate({
+      where: { status: "OVERDUE" },
+      _sum: { amount: true },
+    });
+
     // Get upcoming dues for today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -61,6 +66,7 @@ export async function GET(request: NextRequest) {
       totalProfit: totalProfit._sum.interest || 0,
       upcomingDues,
       defaulters,
+      totalDue: totalDue._sum.amount || 0,
     });
   } catch (error) {
     console.error("Error fetching admin stats:", error);

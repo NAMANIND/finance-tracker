@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const borrowers = await prisma.borrower.findMany({
       where,
       orderBy: {
-        createdAt: "desc",
+        name: "asc",
       },
       include: {
         agent: {
@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
     requireAdmin(request as NextRequest);
 
     const data = await request.json();
-    const { name, fatherName, phone, address, panId, agentId } = data;
+    const { name, guarantorName, phone, address, panId, agentId } = data;
 
     // Validate required fields
-    if (!name || !fatherName || !phone || !address || !panId || !agentId) {
+    if (!name || !guarantorName || !phone || !address || !panId || !agentId) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const borrower = await prisma.borrower.create({
       data: {
         name,
-        fatherName,
+        guarantorName,
         phone,
         address,
         panId,
