@@ -138,7 +138,6 @@ model Installment {
   amount            Float // Total amount (principal + interest)
   status            PaymentStatus @default(PENDING)
   paidAt            DateTime?
-  penalty           Float         @default(0)
   transactions      Transaction[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

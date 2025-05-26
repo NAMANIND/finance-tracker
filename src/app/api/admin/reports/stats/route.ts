@@ -25,6 +25,10 @@ export async function GET(req: NextRequest) {
       .filter((t) => t.type === "INSTALLMENT")
       .reduce((sum, t) => sum + t.interest, 0);
 
+    const totalPenaltyAmount = allTransactions
+      .filter((t) => t.type === "INSTALLMENT")
+      .reduce((sum, t) => sum + t.penaltyAmount, 0);
+
     const totalExpenses = allTransactions
       .filter((t) => t.type === "EXPENSE")
       .reduce((sum, t) => sum + t.amount, 0);
@@ -33,13 +37,18 @@ export async function GET(req: NextRequest) {
       .filter((t) => t.type === "INCOME")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalProfit = totalInstallmetnsInterest + totalIncome - totalExpenses;
+    const totalProfit =
+      totalInstallmetnsInterest +
+      totalPenaltyAmount +
+      totalIncome -
+      totalExpenses;
 
     return NextResponse.json({
       totalProfit,
       totalExpenses,
       totalInstallmetnsInterest,
       totalIncome,
+      totalPenaltyAmount,
     });
   } catch (error) {
     console.error("Error fetching stats:", error);

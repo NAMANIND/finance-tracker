@@ -36,6 +36,7 @@ interface ReportStats {
   totalExpenses: number;
   totalInstallmetnsInterest: number;
   totalIncome: number;
+  totalPenaltyAmount: number;
   transactions: Transaction[];
 }
 
@@ -44,6 +45,7 @@ interface RangeStats {
   expenses: number;
   interest: number;
   income: number;
+  penalty: number;
 }
 
 export default function ReportsPage() {
@@ -59,6 +61,7 @@ export default function ReportsPage() {
     totalExpenses: 0,
     totalInstallmetnsInterest: 0,
     totalIncome: 0,
+    totalPenaltyAmount: 0,
     transactions: [],
   });
   const [rangeStats, setRangeStats] = useState<RangeStats>({
@@ -66,6 +69,7 @@ export default function ReportsPage() {
     expenses: 0,
     interest: 0,
     income: 0,
+    penalty: 0,
   });
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -169,6 +173,7 @@ export default function ReportsPage() {
         totalExpenses: data.totalExpenses,
         totalInstallmetnsInterest: data.totalInstallmetnsInterest,
         totalIncome: data.totalIncome,
+        totalPenaltyAmount: data.totalPenaltyAmount,
       }));
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -214,6 +219,12 @@ export default function ReportsPage() {
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.interest),
               0
+            ) +
+          data.transactions
+            .filter((t: Transaction) => t.type === "INSTALLMENT")
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.penaltyAmount),
+              0
             ) -
           data.transactions
             .filter((t: Transaction) => t.type === "EXPENSE")
@@ -233,6 +244,12 @@ export default function ReportsPage() {
         income: data.transactions
           .filter((t: Transaction) => t.type === "INCOME")
           .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
+        penalty: data.transactions
+          .filter((t: Transaction) => t.type === "INSTALLMENT")
+          .reduce(
+            (sum: number, t: Transaction) => sum + Math.abs(t.penaltyAmount),
+            0
+          ),
       };
       setRangeStats(rangeStats);
     } catch (error) {
@@ -443,7 +460,10 @@ export default function ReportsPage() {
       ["Total Interest", totalInterest],
       ["Total Penalty", totalPenalty],
       ["Total Extra", totalExtra],
-      ["Net Profit", totalIncome + totalInterest - totalExpenses],
+      [
+        "Net Profit",
+        totalIncome + totalInterest + totalPenalty - totalExpenses,
+      ],
     ];
 
     // Add empty row before summary
@@ -546,7 +566,7 @@ export default function ReportsPage() {
       {/* All Time Stats */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">All Time Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
@@ -598,6 +618,22 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
+                All Time Penalty
+              </dt>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.totalPenaltyAmount.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Expenses
               </dt>
             </CardHeader>
@@ -624,7 +660,7 @@ export default function ReportsPage() {
               )}`
             : `${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Stats`}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
@@ -669,6 +705,22 @@ export default function ReportsPage() {
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
                   `₹${rangeStats.interest.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <dt className="truncate text-sm font-medium text-gray-500">
+                Period Penalty
+              </dt>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${rangeStats.penalty.toLocaleString()}`
                 )}
               </div>
             </CardContent>
@@ -821,7 +873,7 @@ export default function ReportsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[200px]">
                 Amount
               </th>
               {stats.transactions.some((t) => t.type === "INSTALLMENT") && (
@@ -878,7 +930,7 @@ export default function ReportsPage() {
                     {transaction.category}
                   </td>
                   <td
-                    className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                    className={`px-6 py-4 whitespace-nowrap text-sm font-medium w-[200px] ${
                       transaction.type === "EXPENSE"
                         ? "text-red-600"
                         : "text-green-600"
@@ -952,7 +1004,7 @@ export default function ReportsPage() {
           </tbody>
           {/* Summary row */}
           <tfoot>
-            <tr className="bg-gray-100 font-semibold">
+            <tr className="bg-gray-100 text-sm font-semibold">
               <td className="px-6 py-3" colSpan={4}>
                 Period Totals
               </td>
@@ -960,7 +1012,7 @@ export default function ReportsPage() {
                 className={`px-6 py-3 ${
                   rangeStats.profit >= 0 ? "text-green-600" : "text-red-600"
                 }`}
-                colSpan={2}
+                colSpan={1}
               >
                 {rangeStats.profit >= 0 ? "+" : "-"}₹
                 {Math.abs(rangeStats.profit).toFixed(2)}

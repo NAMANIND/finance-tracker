@@ -31,6 +31,18 @@ export async function GET(req: NextRequest) {
           lte: new Date(endDate),
         },
       },
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        category: true,
+        createdAt: true,
+        notes: true,
+        name: true,
+        penaltyAmount: true,
+        extraAmount: true,
+        interest: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
