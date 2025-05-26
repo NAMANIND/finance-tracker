@@ -6,7 +6,9 @@ export async function GET(req: NextRequest) {
   try {
     requireAdmin(req);
 
-    const today = new Date().toISOString().split("T")[0];
+    // Create start of today in UTC
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
     const transactions = await prisma.transaction.findMany({
       where: {
