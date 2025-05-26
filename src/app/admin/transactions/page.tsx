@@ -799,12 +799,12 @@ export default function TransactionsPage() {
                         ₹{Number(formData.extraAmount || 0).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    {/* <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Due Amount:</span>
                       <span className="font-medium">
                         ₹{Number(formData.dueAmount || 0).toLocaleString()}
                       </span>
-                    </div>
+                    </div> */}
                     <div className="border-t border-gray-200 pt-2">
                       <div className="flex justify-between font-medium">
                         <span className="text-gray-900">Total Amount:</span>
