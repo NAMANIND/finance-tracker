@@ -12,8 +12,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get today's date range
+    // Create start of today in IST (UTC+5:30)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Convert to IST by adding 5 hours and 30 minutes
+    today.setUTCHours(
+      today.getUTCHours() + 5,
+      today.getUTCMinutes() + 30,
+      0,
+      0
+    );
+    // Set to start of day
+    today.setUTCHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
