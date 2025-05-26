@@ -6,8 +6,16 @@ export async function GET(req: NextRequest) {
   try {
     requireAdmin(req);
 
-    // Create start of today in UTC
+    // Create start of today in IST (UTC+5:30)
     const today = new Date();
+    // Convert to IST by adding 5 hours and 30 minutes
+    today.setUTCHours(
+      today.getUTCHours() + 5,
+      today.getUTCMinutes() + 30,
+      0,
+      0
+    );
+    // Set to start of day
     today.setUTCHours(0, 0, 0, 0);
 
     const transactions = await prisma.transaction.findMany({
