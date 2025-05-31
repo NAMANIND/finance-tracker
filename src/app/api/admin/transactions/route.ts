@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     // );
 
     // Validate required fields
-    if (!amount || !type) {
+    if (amount < 0 || !type) {
       return NextResponse.json(
         { error: "Amount and type are required" },
         { status: 400 }

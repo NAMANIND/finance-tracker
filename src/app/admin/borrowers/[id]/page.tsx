@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BorrowerDetailsSkeleton } from "@/components/dashboard/BorrowerDetailsSkeleton";
+import { Timer } from "lucide-react";
 
 interface Loan {
   id: string;
@@ -42,6 +43,7 @@ interface Loan {
   status: string;
   startDate: string;
   createdAt: string;
+  frequency: string;
   installments: {
     id: string;
     dueDate: string;
@@ -205,6 +207,9 @@ export default function BorrowerDetailsPage() {
     // Calculate number of installments based on frequency
     const isWeekly = formData.repaymentFrequency === "WEEKLY";
     const isDaily = formData.repaymentFrequency === "DAILY";
+    const isMonthly = formData.repaymentFrequency === "MONTHLY";
+
+    const direct = isDaily || isMonthly;
     const numberOfInstallments = isDaily
       ? durationMonths * 30 // 30 days per month for daily
       : isWeekly
@@ -239,20 +244,32 @@ export default function BorrowerDetailsPage() {
 
       // Calculate interest for this installment
       const interest = remainingInterest / (numberOfInstallments - i);
+      // For monthly repayments, set all values to 0
+      if (isMonthly) {
+        installments.push({
+          dueDate: dueDate.toISOString().split("T")[0],
+          amount: 0,
+          principal: 0,
+          interest: interest,
+          installmentAmount: 0,
+          dueAmount: 0,
+        });
+        break;
+      }
 
       // Calculate principal for this installment
       const principalPayment = remainingPrincipal / (numberOfInstallments - i);
 
       // Total installment amount
-      const amount = isDaily ? principalPayment + interest : principalPayment;
-      const installmentAmount = isDaily
+      const amount = direct ? principalPayment + interest : principalPayment;
+      const installmentAmount = direct
         ? principalPayment + interest
         : principalPayment;
 
       installments.push({
         dueDate: dueDate.toISOString().split("T")[0],
         amount: amount,
-        principal: isDaily ? principalPayment : principalPayment - interest,
+        principal: direct ? principalPayment : principalPayment - interest,
         interest: interest,
         installmentAmount: installmentAmount,
         dueAmount: 0,
@@ -266,7 +283,7 @@ export default function BorrowerDetailsPage() {
       totalAmount: totalAmountToRepay,
       totalInterest,
       actualAmountReceived: principal,
-      amountGiven: isDaily ? amountGiven + totalInterest : amountGiven,
+      amountGiven: direct ? amountGiven + totalInterest : amountGiven,
       installments,
     });
   }, [formData]);
@@ -917,6 +934,18 @@ export default function BorrowerDetailsPage() {
                                 Started on {formatDate(loan.startDate)}
                               </p>
                             </div>
+
+                            <div className="flex items-center gap-2">
+                              <Timer className="h-4 w-4 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                Repayment Frequency{" "}
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800  `}
+                                >
+                                  {loan.frequency}
+                                </span>
+                              </p>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center">
@@ -1300,7 +1329,7 @@ export default function BorrowerDetailsPage() {
                           <SelectValue placeholder="Select frequency" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* <SelectItem value="MONTHLY">Monthly</SelectItem> */}
+                          <SelectItem value="MONTHLY">Monthly</SelectItem>
                           <SelectItem value="WEEKLY">Weekly</SelectItem>
                           <SelectItem value="DAILY">Daily</SelectItem>
                         </SelectContent>
@@ -1335,12 +1364,14 @@ export default function BorrowerDetailsPage() {
                           Principal Amount
                         </p>
                         <p className="mt-1 text-lg font-semibold text-gray-900">
-                          {formatCurrency(
-                            formData.repaymentFrequency === "DAILY"
-                              ? installmentDetails.actualAmountReceived +
-                                  installmentDetails.totalInterest
-                              : installmentDetails.actualAmountReceived
-                          )}
+                          {formData.repaymentFrequency === "MONTHLY"
+                            ? "On Settlement"
+                            : formatCurrency(
+                                formData.repaymentFrequency === "DAILY"
+                                  ? installmentDetails.actualAmountReceived +
+                                      installmentDetails.totalInterest
+                                  : installmentDetails.actualAmountReceived
+                              )}
                         </p>
                       </div>
                       <div className="rounded-md bg-gray-50 p-3">
@@ -1356,7 +1387,11 @@ export default function BorrowerDetailsPage() {
                           Total Interest
                         </p>
                         <p className="mt-1 text-lg font-semibold text-gray-900">
-                          {formatCurrency(installmentDetails.totalInterest)}
+                          {formData.repaymentFrequency === "MONTHLY"
+                            ? "On Settlement"
+                            : installmentDetails.totalInterest > 0
+                            ? formatCurrency(installmentDetails.totalInterest)
+                            : "No Interest"}
                         </p>
                       </div>
                       <div className="rounded-md bg-gray-50 p-3">
@@ -1364,7 +1399,9 @@ export default function BorrowerDetailsPage() {
                           Installments
                         </p>
                         <p className="mt-1 text-lg font-semibold text-gray-900">
-                          {installmentDetails.installments.length}
+                          {formData.repaymentFrequency === "MONTHLY"
+                            ? `Till Settlement`
+                            : installmentDetails.installments.length}
                         </p>
                       </div>
                     </div>

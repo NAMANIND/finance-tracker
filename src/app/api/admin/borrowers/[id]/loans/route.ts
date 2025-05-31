@@ -105,6 +105,8 @@ export async function POST(
     const principalPerInstallment = principalAmount / numInstallments;
     const interestPerInstallment = totalInterest / numInstallments;
 
+    let loan;
+
     // Create loan with installments and transaction in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create loan with installments
@@ -115,64 +117,92 @@ export async function POST(
         },
       });
 
-      const loan = await tx.loan.create({
-        data: {
-          borrowerId: (await params).id,
-          principalAmount: Number(principalAmount),
-          interestRate: Number(interestRate),
-          duration: Number(termMonths),
-          startDate: new Date(startDate),
-          status: "ACTIVE",
-          frequency: frequency as PaymentFrequency,
-          createdAt: new Date(createdAt),
-          installments: {
-            create: Array.from({ length: numInstallments }, (_, i) => {
-              const dueDate = new Date(startDate);
-              if (frequency === PaymentFrequency.DAILY) {
-                dueDate.setDate(dueDate.getDate() + i);
-              } else if (frequency === PaymentFrequency.WEEKLY) {
-                dueDate.setDate(dueDate.getDate() + i * 7);
-              } else {
-                dueDate.setMonth(dueDate.getMonth() + i);
-              }
-
-              const isDaily = frequency === PaymentFrequency.DAILY;
-              return {
-                principal: Number(
-                  (isDaily
-                    ? principalPerInstallment
-                    : principalPerInstallment - interestPerInstallment
-                  ).toFixed(2)
-                ),
+      if (frequency === PaymentFrequency.MONTHLY) {
+        loan = await tx.loan.create({
+          data: {
+            borrowerId: (await params).id,
+            principalAmount: Number(principalAmount),
+            interestRate: Number(interestRate),
+            duration: Number(termMonths),
+            startDate: new Date(startDate),
+            status: "ACTIVE",
+            frequency: frequency as PaymentFrequency,
+            createdAt: new Date(createdAt),
+            installments: {
+              create: {
+                principal: 0,
                 interest: Number(interestPerInstallment.toFixed(2)),
-                installmentAmount: Number(
-                  (isDaily
-                    ? principalPerInstallment + interestPerInstallment
-                    : principalPerInstallment
-                  ).toFixed(2)
-                ),
-                amount: Number(
-                  (isDaily
-                    ? principalPerInstallment + interestPerInstallment
-                    : principalPerInstallment
-                  ).toFixed(2)
-                ),
-                dueDate,
+                installmentAmount: 0,
+                amount: 0,
+                dueDate: new Date(startDate),
                 status: "PENDING",
-              };
-            }),
+              },
+            },
           },
-        },
-        include: {
-          installments: true,
-        },
-      });
+          include: {
+            installments: true,
+          },
+        });
+      } else {
+        loan = await tx.loan.create({
+          data: {
+            borrowerId: (await params).id,
+            principalAmount: Number(principalAmount),
+            interestRate: Number(interestRate),
+            duration: Number(termMonths),
+            startDate: new Date(startDate),
+            status: "ACTIVE",
+            frequency: frequency as PaymentFrequency,
+            createdAt: new Date(createdAt),
+            installments: {
+              create: Array.from({ length: numInstallments }, (_, i) => {
+                const dueDate = new Date(startDate);
+                if (frequency === PaymentFrequency.DAILY) {
+                  dueDate.setDate(dueDate.getDate() + i);
+                } else if (frequency === PaymentFrequency.WEEKLY) {
+                  dueDate.setDate(dueDate.getDate() + i * 7);
+                } else {
+                  dueDate.setMonth(dueDate.getMonth() + i);
+                }
 
+                const isDaily = frequency === PaymentFrequency.DAILY;
+                return {
+                  principal: Number(
+                    (isDaily
+                      ? principalPerInstallment
+                      : principalPerInstallment - interestPerInstallment
+                    ).toFixed(2)
+                  ),
+                  interest: Number(interestPerInstallment.toFixed(2)),
+                  installmentAmount: Number(
+                    (isDaily
+                      ? principalPerInstallment + interestPerInstallment
+                      : principalPerInstallment
+                    ).toFixed(2)
+                  ),
+                  amount: Number(
+                    (isDaily
+                      ? principalPerInstallment + interestPerInstallment
+                      : principalPerInstallment
+                    ).toFixed(2)
+                  ),
+                  dueDate,
+                  status: "PENDING",
+                };
+              }),
+            },
+          },
+          include: {
+            installments: true,
+          },
+        });
+      }
       // Create transaction record for the loan
       await tx.transaction.create({
         data: {
           amount:
-            frequency === PaymentFrequency.DAILY
+            frequency === PaymentFrequency.DAILY ||
+            frequency === PaymentFrequency.MONTHLY
               ? Number(principalAmount)
               : Number(principalAmount) *
                 (1 - (Number(interestRate) * Number(termMonths)) / 100),

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { TransactionType, Loan, TransactionCategory } from "@prisma/client";
+import { TransactionType, TransactionCategory } from "@prisma/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,7 +74,7 @@ interface NewTransactionForm {
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
-  const [loans, setLoans] = useState<Loan[]>([]);
+  // const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBorrowerInstallments, setSelectedBorrowerInstallments] =
     useState<Installment[]>([]);
@@ -150,13 +150,23 @@ export default function TransactionsPage() {
     if (borrowerSearch.trim() === "") {
       setFilteredBorrowers(borrowers);
     } else {
-      const searchLower = borrowerSearch.toLowerCase();
-      const filtered = borrowers.filter(
-        (borrower) =>
-          borrower.name.toLowerCase().includes(searchLower) ||
-          borrower.phone.includes(searchLower) ||
-          borrower.panId.toLowerCase().includes(searchLower)
-      );
+      const searchTerms = borrowerSearch
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((term) => term.length > 0);
+
+      const filtered = borrowers.filter((borrower) => {
+        const borrowerInfo = [
+          borrower.name.toLowerCase(),
+          borrower.phone.toLowerCase(),
+          borrower.panId.toLowerCase(),
+          borrower.guarantorName.toLowerCase(),
+          borrower.address.toLowerCase(),
+        ].join(" ");
+
+        return searchTerms.every((term) => borrowerInfo.includes(term));
+      });
+
       setFilteredBorrowers(filtered);
     }
   }, [borrowerSearch, borrowers]);
@@ -228,18 +238,18 @@ export default function TransactionsPage() {
       setSelectedBorrowerInstallments(installmentsData);
 
       // Fetch loans for the selected borrower
-      const loansRes = await fetch(`/api/admin/borrowers/${borrowerId}/loans`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // const loansRes = await fetch(`/api/admin/borrowers/${borrowerId}/loans`, {
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      // });
 
-      if (!loansRes.ok) {
-        throw new Error("Failed to fetch loans");
-      }
+      // if (!loansRes.ok) {
+      //   throw new Error("Failed to fetch loans");
+      // }
 
-      const loansData = await loansRes.json();
-      setLoans(loansData);
+      // const loansData = await loansRes.json();
+      // setLoans(loansData);
     } catch (error) {
       console.error("Error fetching borrower data:", error);
     }
@@ -279,8 +289,7 @@ export default function TransactionsPage() {
         return;
       }
     }
-
-    if (!formData.amount || formData.amount <= 0) {
+    if (formData.amount < 0) {
       setFormError("Amount must be greater than 0");
       return;
     }
@@ -626,33 +635,109 @@ export default function TransactionsPage() {
                 <div>
                   <label
                     htmlFor="borrowerSearch"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                   >
                     Search Borrower
                   </label>
-                  <Input
-                    type="text"
-                    id="borrowerSearch"
-                    value={borrowerSearch}
-                    onChange={(e) => setBorrowerSearch(e.target.value)}
-                    placeholder="Search by name, phone, or PAN ID"
-                  />
+                  <div className="relative">
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        id="borrowerSearch"
+                        value={borrowerSearch}
+                        onChange={(e) => setBorrowerSearch(e.target.value)}
+                        placeholder="Search by name, phone, PAN ID or guarantor"
+                        className="pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      />
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-gray-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    {borrowerSearch && filteredBorrowers.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full rounded-xl bg-white shadow-xl border border-gray-100">
+                        <ul className="max-h-72 overflow-auto rounded-xl py-1 text-base focus:outline-none sm:text-sm">
+                          {filteredBorrowers.map((borrower) => (
+                            <li
+                              key={borrower.id}
+                              className="relative cursor-pointer select-none py-3 px-4 hover:bg-indigo-50 transition-colors duration-150 border-b border-gray-100 last:border-0"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  borrowerId: borrower.id,
+                                }));
+                                handleBorrowerChange(borrower.id);
+                                setBorrowerSearch("");
+                              }}
+                            >
+                              <div className="flex flex-col space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium text-gray-900">
+                                    {borrower.name}
+                                  </span>
+                                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                    {borrower.panId}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between space-x-2 gap-1 text-sm text-gray-500">
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <svg
+                                      className="h-4 w-4 text-gray-400"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                                    </svg>
+                                    <span>{borrower.phone}</span>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <svg
+                                      className="h-4 w-4 text-gray-400"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    <span>
+                                      Guarantor: {borrower.guarantorName}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <label
                     htmlFor="borrowerSelect"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                   >
-                    Select Borrower
+                    Selected Borrower
                   </label>
                   <Select
-                    value={
-                      formData.loanId
-                        ? loans.find((l) => l.id === formData.loanId)
-                            ?.borrowerId || ""
-                        : ""
-                    }
+                    value={formData.borrowerId || ""}
                     onValueChange={(value) => {
                       if (value) {
                         setFormData((prev) => ({
@@ -664,19 +749,94 @@ export default function TransactionsPage() {
                         setSelectedBorrowerInstallments([]);
                         setFormData((prev) => ({
                           ...prev,
+                          borrowerId: "",
                           loanId: "",
                           installmentId: "",
                         }));
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a borrower" />
+                    <SelectTrigger className="w-full h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                      <SelectValue placeholder="Select a borrower">
+                        {formData.borrowerId && (
+                          <div className="flex flex-row gap-1">
+                            <span className="font-medium text-gray-900">
+                              {
+                                borrowers.find(
+                                  (b) => b.id === formData.borrowerId
+                                )?.name
+                              }
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              •{" "}
+                              {
+                                borrowers.find(
+                                  (b) => b.id === formData.borrowerId
+                                )?.phone
+                              }{" "}
+                              •{" "}
+                              {
+                                borrowers.find(
+                                  (b) => b.id === formData.borrowerId
+                                )?.panId
+                              }{" "}
+                              •{" "}
+                              {
+                                borrowers.find(
+                                  (b) => b.id === formData.borrowerId
+                                )?.guarantorName
+                              }
+                            </span>
+                          </div>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
-                      {filteredBorrowers.map((borrower) => (
-                        <SelectItem key={borrower.id} value={borrower.id}>
-                          {borrower.name} - {borrower.phone} - {borrower.panId}
+                    <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                      {borrowers.map((borrower) => (
+                        <SelectItem
+                          key={borrower.id}
+                          value={borrower.id}
+                          className="py-3 px-4 hover:bg-indigo-50 transition-colors duration-150"
+                        >
+                          <div className="flex flex-col space-y-1.5 ">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-gray-900">
+                                {borrower.name}
+                              </span>
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                {borrower.panId}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between space-x-2 gap-1 text-sm text-gray-500">
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg
+                                  className="h-4 w-4 text-gray-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                                </svg>
+                                <span>{borrower.phone}</span>
+                              </div>
+                              <p className="text-gray-200">|</p>
+                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg
+                                  className="h-4 w-4 text-gray-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span>Guarantor: {borrower.guarantorName}</span>
+                              </div>
+                            </div>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -747,7 +907,7 @@ export default function TransactionsPage() {
                     type="number"
                     id="amount"
                     name="amount"
-                    value={formData.amount === 0 ? "" : formData.amount}
+                    value={formData.amount}
                     placeholder="Enter Payment Amount"
                     onChange={handleInputChange}
                     required
@@ -826,6 +986,25 @@ export default function TransactionsPage() {
                   </div>
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="interest"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Interest Value
+                  </label>
+                  <Input
+                    type="number"
+                    id="interest"
+                    name="interest"
+                    value={formData.interest}
+                    onChange={handleInputChange}
+                    disabled={true}
+                    placeholder="Interest Value"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
                 <div className="rounded-lg bg-gray-50 p-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">

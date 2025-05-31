@@ -88,6 +88,14 @@ export default function AdminDashboard() {
     queryKey: ["dashboardStats"],
     queryFn: async () => {
       const token = localStorage.getItem("token");
+
+      // just a normal api call
+      await fetch("/api/admin/installments/generate", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const response = await fetch("/api/admin/stats", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -430,9 +438,9 @@ export default function AdminDashboard() {
                           <div className="flex items-center space-x-2">
                             <Link
                               href={`/admin/agent/reports?agentId=${collection.agentId}`}
-                              className="inline-flex items-center rounded-md bg-indigo-50 p-1.5 text-indigo-600 hover:bg-indigo-100"
+                              className="inline-flex items-center rounded-md bg-purple-50 p-1.5 text-purple-600 hover:bg-purple-100"
                             >
-                              <UserSearch className="h-4 w-4" />
+                              <UserSearch className="h-5 w-5" />
                             </Link>
                           </div>
                         </div>
