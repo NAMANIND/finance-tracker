@@ -152,6 +152,39 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const pendingsToday = await prisma.installment.findMany({
+      where: {
+        loan: {
+          borrower: { agentId: agent.id },
+        },
+        status: "PENDING",
+        dueDate: {
+          gte: today,
+          lt: tomorrow, // Only consider dues for today
+        },
+      },
+      select: {
+        id: true,
+        principal: true,
+        interest: true,
+        dueDate: true,
+        loan: {
+          select: {
+            id: true,
+            borrower: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    // console.log("Pendings today:", pendingsToday.length);
+    // console.log("Total dues:", totalDues._count);
+    // console.log("Total dues amount:", totalDues._sum.principal + totalDues._sum.interest);
+
     // console.log("Dues today:", duesToday.length);
 
     return NextResponse.json({
@@ -168,6 +201,14 @@ export async function GET(request: NextRequest) {
         (totalDues._sum.principal || 0) + (totalDues._sum.interest || 0),
       totalDueCount: totalDues._count || 0,
       duesToday: duesToday.map((due) => ({
+        borrower: due.loan.borrower,
+        amount: due.principal + due.interest,
+        dueDate: due.dueDate.toISOString(),
+        loanId: due.loan.id,
+        installmentId: due.id,
+        interest: due.interest,
+      })),
+      pendingsToday: pendingsToday.map((due) => ({
         borrower: due.loan.borrower,
         amount: due.principal + due.interest,
         dueDate: due.dueDate.toISOString(),

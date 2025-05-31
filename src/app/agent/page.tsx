@@ -31,6 +31,18 @@ interface AgentStats {
     principal: number;
     interest: number;
   }[];
+  pendingsToday: {
+    borrower: {
+      name: string;
+      phone: string;
+    };
+    amount: number;
+    dueDate: string;
+    loanId: string;
+    installmentId: string;
+    principal: number;
+    interest: number;
+  }[];
 }
 
 interface Borrower {
@@ -252,6 +264,9 @@ export default function AgentDashboard() {
             }`}
           >
             Today&apos;s Collections
+            <span className="ml-1 inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+              {stats?.pendingsToday.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("dues")}
@@ -262,6 +277,9 @@ export default function AgentDashboard() {
             }`}
           >
             All Dues
+            <span className="ml-1 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+              {stats?.duesToday.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("clients")}
@@ -272,6 +290,9 @@ export default function AgentDashboard() {
             }`}
           >
             Assigned Clients
+            <span className="ml-1 inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
+              {borrowers?.length || 0}
+            </span>
           </button>
         </nav>
       </div>
@@ -281,43 +302,45 @@ export default function AgentDashboard() {
         {activeTab === "collections" ? (
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <ul role="list" className="divide-y divide-gray-200">
-              {stats?.duesToday.map((due: AgentStats["duesToday"][0]) => (
-                <li key={due.installmentId} className="px-4 sm:px-6 py-4">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
-                          <span className="text-lg font-medium text-indigo-600">
-                            {due.borrower.name.charAt(0)}
-                          </span>
+              {stats?.pendingsToday.map(
+                (due: AgentStats["pendingsToday"][0]) => (
+                  <li key={due.installmentId} className="px-4 sm:px-6 py-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
+                            <span className="text-lg font-medium text-indigo-600">
+                              {due.borrower.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-base font-medium text-gray-900">
+                              {due.borrower.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {due.borrower.phone}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-base font-medium text-gray-900">
-                            {due.borrower.name}
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-gray-900">
+                            ₹{due.amount.toLocaleString()}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {due.borrower.phone}
-                          </p>
+                          <p className="text-xs text-gray-500">Due Today</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-gray-900">
-                          ₹{due.amount.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500">Due Today</p>
+                      <div className="flex items-center justify-end border-t border-gray-100 pt-3">
+                        <button
+                          onClick={() => handleCollectClick(due)}
+                          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500  focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                          Collect Payment of {due.borrower.name}
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-end border-t border-gray-100 pt-3">
-                      <button
-                        onClick={() => handleCollectClick(due)}
-                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500  focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                      >
-                        Collect Payment of {due.borrower.name}
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                )
+              )}
               {stats?.duesToday.length === 0 && (
                 <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
                   No collections due today
