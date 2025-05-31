@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    console.log("Fetching stats for agent:", agent.id);
+    // console.log("Fetching stats for agent:", agent.id);
 
     // Get total borrowers
     const totalBorrowers = await prisma.borrower.count({
       where: { agentId: agent.id },
     });
 
-    console.log("Total borrowers:", totalBorrowers);
+    // console.log("Total borrowers:", totalBorrowers);
 
     // Get total active loans
     const totalActiveLoans = await prisma.loan.count({
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Total active loans:", totalActiveLoans);
+    // console.log("Total active loans:", totalActiveLoans);
 
     // Get today's collections
     // Create start of today in IST (UTC+5:30)
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Dues today:", duesToday.length);
+    // console.log("Dues today:", duesToday.length);
 
     return NextResponse.json({
       totalBorrowers,

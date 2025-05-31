@@ -101,7 +101,7 @@ export default function AgentsPage() {
       fetchAgents();
     } catch (error) {
       console.error("Error adding agent:", error);
-      alert("Failed to add agent");
+      // alert("Failed to add agent");
     }
   };
 

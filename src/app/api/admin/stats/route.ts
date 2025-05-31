@@ -11,6 +11,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get upcoming dues for today
+    // Create start of today in IST (UTC+5:30)
+    const today = new Date();
+    // Convert to IST by adding 5 hours and 30 minutes
+    today.setUTCHours(
+      today.getUTCHours() + 5,
+      today.getUTCMinutes() + 30,
+      0,
+      0
+    );
+    // Set to start of day
+    today.setUTCHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     // Get total active loans
     const totalLoans = await prisma.loan.count({
       where: { status: "ACTIVE" },
@@ -29,24 +44,16 @@ export async function GET(request: NextRequest) {
     });
 
     const totalDue = await prisma.installment.aggregate({
-      where: { status: "OVERDUE" },
+      where: {
+        dueDate: {
+          lt: today,
+        },
+        status: {
+          in: ["PENDING", "OVERDUE"],
+        },
+      },
       _sum: { amount: true },
     });
-
-    // Get upcoming dues for today
-    // Create start of today in IST (UTC+5:30)
-    const today = new Date();
-    // Convert to IST by adding 5 hours and 30 minutes
-    today.setUTCHours(
-      today.getUTCHours() + 5,
-      today.getUTCMinutes() + 30,
-      0,
-      0
-    );
-    // Set to start of day
-    today.setUTCHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     const upcomingDues = await prisma.installment.count({
       where: {

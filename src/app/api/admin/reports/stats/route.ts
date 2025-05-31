@@ -33,9 +33,14 @@ export async function GET(req: NextRequest) {
       .filter((t) => t.type === "EXPENSE")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalIncome = allTransactions
-      .filter((t) => t.type === "INCOME")
+    const totalInstallmentAmount = allTransactions
+      .filter((t) => t.type === "INSTALLMENT")
       .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalIncome =
+      allTransactions
+        .filter((t) => t.type === "INCOME")
+        .reduce((sum, t) => sum + t.amount, 0) + totalInstallmentAmount;
 
     const totalProfit =
       totalInstallmetnsInterest +

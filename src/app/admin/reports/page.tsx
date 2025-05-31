@@ -15,7 +15,7 @@ import { format, startOfDay, endOfDay, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ReportsSkeleton } from "@/components/dashboard/ReportsSkeleton";
 import { Input } from "@/components/ui/input";
-import { CalendarIcon, Download } from "lucide-react";
+import { Download } from "lucide-react";
 // We'll import xlsx dynamically when needed
 
 interface Transaction {
@@ -145,7 +145,7 @@ export default function ReportsPage() {
   useEffect(() => {
     if (viewMode === "custom") {
       setPendingDateRange(dateRange);
-      setShowCalendar(true);
+      // setShowCalendar(true);
     } else {
       setShowCalendar(false);
     }
@@ -241,9 +241,21 @@ export default function ReportsPage() {
             (sum: number, t: Transaction) => sum + Math.abs(t.interest),
             0
           ),
-        income: data.transactions
-          .filter((t: Transaction) => t.type === "INCOME")
-          .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
+        // Calculate income with installments included
+        income:
+          data.transactions
+            .filter((t: Transaction) => t.type === "INCOME")
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.amount),
+              0
+            ) +
+          data.transactions
+            .filter((t: Transaction) => t.type === "INSTALLMENT")
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.amount),
+              0
+            ),
+        // Calculate penalty
         penalty: data.transactions
           .filter((t: Transaction) => t.type === "INSTALLMENT")
           .reduce(
@@ -392,6 +404,7 @@ export default function ReportsPage() {
     let totalInterest = 0;
     let totalPenalty = 0;
     let totalExtra = 0;
+    let totalInstallmentAmount = 0;
 
     // Add data with alternating row colors
     stats.transactions.forEach((t, index) => {
@@ -405,6 +418,7 @@ export default function ReportsPage() {
         totalInterest += t.interest;
         totalPenalty += t.penaltyAmount;
         totalExtra += t.extraAmount;
+        totalInstallmentAmount += t.amount; // Include installment amount in income
       } else if (t.type === "INCOME") {
         displayAmount = Math.abs(t.amount);
         totalIncome += Math.abs(t.amount);
@@ -456,7 +470,7 @@ export default function ReportsPage() {
     // Add summary details with proper formatting
     const summaryRows: [string, number][] = [
       ["Total Expenses", -totalExpenses],
-      ["Total Income", totalIncome],
+      ["Total Income", totalIncome + totalInstallmentAmount],
       ["Total Interest", totalInterest],
       ["Total Penalty", totalPenalty],
       ["Total Extra", totalExtra],
@@ -757,7 +771,7 @@ export default function ReportsPage() {
                   setViewMode(newMode);
 
                   if (newMode === "custom") {
-                    setShowCalendar(true);
+                    // setShowCalendar(true);
                     return;
                   }
 
@@ -824,7 +838,7 @@ export default function ReportsPage() {
                   onClick={() => {
                     if (pendingDateRange?.from && pendingDateRange?.to) {
                       setDateRange(pendingDateRange);
-                      setShowCalendar(false);
+                      // setShowCalendar(false);
                     }
                   }}
                   className="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
@@ -832,14 +846,14 @@ export default function ReportsPage() {
                   Apply
                 </Button>
                 {/* button to toggle calendar */}
-                <Button
+                {/* <Button
                   onClick={() => setShowCalendar(!showCalendar)}
                   variant="outline"
                   size="sm"
                   className="w-10 h-10"
                 >
                   <CalendarIcon />
-                </Button>
+                </Button> */}
               </div>
             )}
           </div>

@@ -67,6 +67,8 @@ interface NewTransactionForm {
   dueAmount?: number;
   installmentAmount?: string;
   interest?: number;
+  transactionDate: string;
+  installmentDate: string;
 }
 
 export default function TransactionsPage() {
@@ -92,6 +94,8 @@ export default function TransactionsPage() {
     dueAmount: 0,
     installmentAmount: "",
     interest: 0,
+    transactionDate: new Date().toISOString().split("T")[0],
+    installmentDate: new Date().toISOString().split("T")[0],
   });
   const [formError, setFormError] = useState("");
   const [activeTab, setActiveTab] = useState("expense");
@@ -325,6 +329,8 @@ export default function TransactionsPage() {
         dueAmount: 0,
         installmentAmount: "",
         interest: 0,
+        transactionDate: new Date().toISOString().split("T")[0],
+        installmentDate: new Date().toISOString().split("T")[0],
       });
 
       setSelectedBorrowerInstallments([]);
@@ -574,6 +580,24 @@ export default function TransactionsPage() {
 
                 <div>
                   <label
+                    htmlFor="transactionDate"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Transaction Date
+                  </label>
+                  <Input
+                    type="date"
+                    id="transactionDate"
+                    name="transactionDate"
+                    value={formData.transactionDate}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
                     htmlFor="notes"
                     className="block text-sm font-medium text-gray-700"
                   >
@@ -736,6 +760,24 @@ export default function TransactionsPage() {
                       Due Amount: ₹{Number(formData.dueAmount).toLocaleString()}
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="installmentDate"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Installment Payment Date
+                  </label>
+                  <Input
+                    type="date"
+                    id="installmentDate"
+                    name="installmentDate"
+                    value={formData.installmentDate}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    required
+                  />
                 </div>
 
                 <div className="flex gap-2">

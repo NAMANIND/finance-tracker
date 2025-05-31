@@ -155,7 +155,7 @@ export default function AgentPage() {
       setBorrowerSearchTerm("");
     } catch (error) {
       console.error("Error adding borrowers:", error);
-      alert(error instanceof Error ? error.message : "Failed to add borrowers");
+      // alert(error instanceof Error ? error.message : "Failed to add borrowers");
     }
   };
 

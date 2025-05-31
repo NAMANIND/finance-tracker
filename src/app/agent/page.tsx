@@ -175,7 +175,7 @@ export default function AgentDashboard() {
       await queryClient.invalidateQueries({ queryKey: ["agentBorrowers"] });
     } catch (error) {
       console.error("Error collecting payment:", error);
-      alert("Failed to collect payment");
+      // alert("Failed to collect payment");
     }
   };
 

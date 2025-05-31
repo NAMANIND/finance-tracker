@@ -16,21 +16,25 @@ export async function POST(req: NextRequest) {
       extraAmount,
       dueAmount,
       interest,
+      transactionDate,
+      installmentDate,
     } = await req.json();
 
-    console.log(
-      amount,
-      type,
-      category,
-      notes,
-      name,
-      installmentId,
-      addedBy,
-      penaltyAmount,
-      extraAmount,
-      dueAmount,
-      interest
-    );
+    // console.log(
+    //   amount,
+    //   type,
+    //   category,
+    //   notes,
+    //   name,
+    //   installmentId,
+    //   addedBy,
+    //   penaltyAmount,
+    //   extraAmount,
+    //   dueAmount,
+    //   interest,
+    //   transactionDate,
+    //   installmentDate
+    // );
 
     // Validate required fields
     if (!amount || !type) {
@@ -77,6 +81,10 @@ export async function POST(req: NextRequest) {
         penaltyAmount: penaltyAmount ? Number(penaltyAmount) : 0,
         extraAmount: extraAmount ? Number(extraAmount) : 0,
         interest: interest ? Number(interest) : 0,
+        createdAt:
+          type === TransactionType.INSTALLMENT
+            ? new Date(installmentDate)
+            : new Date(transactionDate),
       },
       include: {
         installment: true,
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
           dueAmount: dueAmount ? Number(dueAmount) : 0,
           penaltyAmount: penaltyAmount ? Number(penaltyAmount) : 0,
           extraAmount: extraAmount ? Number(extraAmount) : 0,
-          paidAt: new Date(),
+          paidAt: installmentDate ? new Date(installmentDate) : new Date(),
         },
       });
     }

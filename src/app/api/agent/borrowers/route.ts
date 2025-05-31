@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log("Fetching borrowers for agent:", agent.id);
+    // console.log("Fetching borrowers for agent:", agent.id);
 
     const borrowers = await prisma.borrower.findMany({
       where: {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Found borrowers:", borrowers.length);
+    // console.log("Found borrowers:", borrowers.length);
 
     // Transform the data to include active loans count and total amount
     const transformedBorrowers = borrowers.map((borrower) => ({

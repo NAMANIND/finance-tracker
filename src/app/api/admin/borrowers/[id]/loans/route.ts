@@ -68,8 +68,14 @@ export async function POST(
     requireAdmin(req);
 
     const body = await req.json();
-    const { principalAmount, interestRate, termMonths, startDate, frequency } =
-      body;
+    const {
+      principalAmount,
+      interestRate,
+      termMonths,
+      startDate,
+      frequency,
+      createdAt,
+    } = body;
 
     // Validate required fields
     if (
@@ -77,7 +83,8 @@ export async function POST(
       !interestRate ||
       !termMonths ||
       !startDate ||
-      !frequency
+      !frequency ||
+      !createdAt
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -117,6 +124,7 @@ export async function POST(
           startDate: new Date(startDate),
           status: "ACTIVE",
           frequency: frequency as PaymentFrequency,
+          createdAt: new Date(createdAt),
           installments: {
             create: Array.from({ length: numInstallments }, (_, i) => {
               const dueDate = new Date(startDate);
@@ -129,18 +137,26 @@ export async function POST(
               }
 
               const isDaily = frequency === PaymentFrequency.DAILY;
-
               return {
-                principal: isDaily
-                  ? principalPerInstallment
-                  : principalPerInstallment - interestPerInstallment,
-                interest: interestPerInstallment,
-                installmentAmount: isDaily
-                  ? principalPerInstallment + interestPerInstallment
-                  : principalPerInstallment,
-                amount: isDaily
-                  ? principalPerInstallment + interestPerInstallment
-                  : principalPerInstallment,
+                principal: Number(
+                  (isDaily
+                    ? principalPerInstallment
+                    : principalPerInstallment - interestPerInstallment
+                  ).toFixed(2)
+                ),
+                interest: Number(interestPerInstallment.toFixed(2)),
+                installmentAmount: Number(
+                  (isDaily
+                    ? principalPerInstallment + interestPerInstallment
+                    : principalPerInstallment
+                  ).toFixed(2)
+                ),
+                amount: Number(
+                  (isDaily
+                    ? principalPerInstallment + interestPerInstallment
+                    : principalPerInstallment
+                  ).toFixed(2)
+                ),
                 dueDate,
                 status: "PENDING",
               };
@@ -166,6 +182,7 @@ export async function POST(
           name: borrower?.name,
           addedBy: "ADMIN",
           installmentId: loan.installments[0].id,
+          createdAt: new Date(createdAt),
         },
       });
 

@@ -104,6 +104,7 @@ export default function BorrowerDetailsPage() {
     repaymentFrequency: "WEEKLY",
     startDate: new Date().toISOString().split("T")[0],
     loanDurationMonths: "4",
+    createdDate: new Date().toISOString().split("T")[0],
   });
   const [formError, setFormError] = useState("");
   const [installmentDetails, setInstallmentDetails] =
@@ -297,6 +298,7 @@ export default function BorrowerDetailsPage() {
           termMonths: parseInt(formData.loanDurationMonths),
           startDate: formData.startDate,
           frequency: formData.repaymentFrequency,
+          createdAt: formData.createdDate,
         }),
       });
 
@@ -312,6 +314,7 @@ export default function BorrowerDetailsPage() {
         repaymentFrequency: "MONTHLY",
         startDate: new Date().toISOString().split("T")[0],
         loanDurationMonths: "4",
+        createdDate: new Date().toISOString().split("T")[0],
       });
       setInstallmentDetails(null);
 
@@ -472,15 +475,15 @@ export default function BorrowerDetailsPage() {
         0
       );
 
-      alert(
-        JSON.stringify({
-          markPendingAsPaid: pendingInstallmentAmount > 0,
-          extraAmount: differenceInAmounts,
-          penaltyAmount: totalPenalties,
-          amount:
-            differenceInAmounts + totalPenalties + pendingInstallmentAmount,
-        })
-      );
+      // alert(
+      //   JSON.stringify({
+      //     markPendingAsPaid: pendingInstallmentAmount > 0,
+      //     extraAmount: differenceInAmounts,
+      //     penaltyAmount: totalPenalties,
+      //     amount:
+      //       differenceInAmounts + totalPenalties + pendingInstallmentAmount,
+      //   })
+      // );
 
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -945,7 +948,7 @@ export default function BorrowerDetailsPage() {
                                 >
                                   {loan.status === "ACTIVE"
                                     ? "= I + E - D"
-                                    : "I + E - D + P"}
+                                    : "I + E + D + P"}
                                 </Badge>
                               </h5>
                               <p className="mt-1 text-xl font-semibold text-gray-900">
@@ -974,7 +977,7 @@ export default function BorrowerDetailsPage() {
                                             sum +
                                             inst.amount +
                                             inst.penaltyAmount +
-                                            inst.extraAmount -
+                                            inst.extraAmount +
                                             inst.dueAmount,
                                           0
                                         )
@@ -1230,6 +1233,25 @@ export default function BorrowerDetailsPage() {
                         id="startDate"
                         name="startDate"
                         value={formData.startDate}
+                        onChange={handleInputChange}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="createdDate"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Created Date
+                    </label>
+                    <div className="mt-1">
+                      <Input
+                        type="date"
+                        id="createdDate"
+                        name="createdDate"
+                        value={formData.createdDate}
                         onChange={handleInputChange}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         required
