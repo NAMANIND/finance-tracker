@@ -12,12 +12,11 @@ export function AgentReportsSkeleton() {
       </div>
 
       {/* Date Range Selector Skeleton */}
-      <div className="flex flex-col gap-4 bg-white p-4 rounded-lg shadow">
+      <div className="flex flex-col gap-4 bg-white p-4 h-[100px] rounded-lg shadow">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-[150px]" />
-          <Skeleton className="h-10 w-[140px]" />
-          <Skeleton className="h-10 w-[140px]" />
         </div>
+        <Skeleton className="h-10 w-[500px]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -55,18 +54,40 @@ export function AgentReportsSkeleton() {
         <div className="lg:col-span-2 space-y-8">
           <div className="rounded-lg bg-white shadow">
             <div className="border-b">
-              <div className="px-6">
-                <div className="flex space-x-8">
-                  <Skeleton className="h-14 w-32" />
-                  <Skeleton className="h-14 w-32" />
+              <div className="px-2">
+                <div className="flex space-x-8 p-4">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-6 w-32" />
                 </div>
+              </div>
+            </div>
+            <div className="p-6">
+              {/* Installments Status  */}
+              <div className="col-span-1 space-y-4">
+                <div className="flex items-center gap-2 justify-between">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-6 w-32" />
+                </div>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg p-4 border border-purple-100"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 justify-between">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-6 w-32" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Quick Stats Skeleton */}
-                <div className="col-span-1 space-y-4">
+                {/* <div className="col-span-1 space-y-4">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-10 w-10 rounded-lg" />
                     <Skeleton className="h-6 w-24" />
@@ -84,10 +105,10 @@ export function AgentReportsSkeleton() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Collection Stats Skeleton */}
-                <div className="col-span-1 space-y-4">
+                {/* <div className="col-span-1 space-y-4">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-10 w-10 rounded-lg" />
                     <Skeleton className="h-6 w-32" />
@@ -105,10 +126,10 @@ export function AgentReportsSkeleton() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Performance Metrics Skeleton */}
-                <div className="col-span-1 space-y-4">
+                {/* <div className="col-span-1 space-y-4">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-10 w-10 rounded-lg" />
                     <Skeleton className="h-6 w-24" />
@@ -126,7 +147,7 @@ export function AgentReportsSkeleton() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
