@@ -17,6 +17,7 @@ import {
   UserPlus,
   Users,
   ArrowRight,
+  UserSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -424,6 +425,15 @@ export default function AdminDashboard() {
                                 </p>
                               </div>
                             </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Link
+                              href={`/admin/agent/reports?agentId=${collection.agentId}`}
+                              className="inline-flex items-center rounded-md bg-indigo-50 p-1.5 text-indigo-600 hover:bg-indigo-100"
+                            >
+                              <UserSearch className="h-4 w-4" />
+                            </Link>
                           </div>
                         </div>
                       ))}

@@ -11,6 +11,7 @@ import {
   BanknotesIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
+import { UserSearch } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -65,11 +66,20 @@ export default function AdminLayout({
       icon: UserIcon,
     },
     {
+      name: "Agent Reports",
+      href: "/admin/agent/reports",
+      icon: UserSearch,
+    },
+    {
       name: "Reports",
       href: "/admin/reports",
       icon: DocumentChartBarIcon,
     },
   ];
+
+  // Separate main navigation and reports navigation
+  const mainNavigation = navigation.slice(0, 4);
+  const reportsNavigation = navigation.slice(4);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -82,40 +92,85 @@ export default function AdminLayout({
             Finance Tracker
           </h1>
         </div>
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          {navigation.map((item) => {
-            const isActive =
-              item.href === "/admin"
-                ? pathname === "/admin"
-                : pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
-            return (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                  isActive
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                <item.icon
-                  className={`mr-3 h-5 w-5 flex-shrink-0 ${
+        <nav className="flex-1 space-y-6 px-2 py-4">
+          {/* Main Navigation */}
+          <div className="space-y-1">
+            <div className="px-2 mb-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Main
+              </h3>
+            </div>
+            {mainNavigation.map((item) => {
+              const isActive =
+                item.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center rounded-md px-2 py-2.5 text-sm font-medium ${
                     isActive
-                      ? "text-indigo-600"
-                      : "text-gray-400 group-hover:text-gray-500"
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
-                  aria-hidden="true"
-                />
-                {item.name}
-              </a>
-            );
-          })}
+                >
+                  <item.icon
+                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                      isActive
+                        ? "text-indigo-600"
+                        : "text-gray-400 group-hover:text-gray-500"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                </a>
+              );
+            })}
+          </div>
+
+          <hr />
+
+          {/* Reports Section */}
+          <div className="space-y-1">
+            <div className="px-2 mb-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Reports
+              </h3>
+            </div>
+
+            {reportsNavigation.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center rounded-md px-2 py-2.5 text-sm font-medium ${
+                    isActive
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <item.icon
+                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                      isActive
+                        ? "text-indigo-600"
+                        : "text-gray-400 group-hover:text-gray-500"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                </a>
+              );
+            })}
+          </div>
         </nav>
         <div className="border-t border-gray-200 p-4">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            className="flex w-full items-center rounded-md px-2 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
           >
             <ArrowRightOnRectangleIcon
               className="mr-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500"

@@ -120,7 +120,7 @@ export default function ReportsPage() {
       case "yearly":
         newDateRange = {
           from: startOfDay(new Date(today.getFullYear(), 0, 1)),
-          to: endOfDay(new Date(today.getFullYear(), 11, 31)),
+          to: endOfDay(today),
         };
         break;
       case "custom":
@@ -667,12 +667,12 @@ export default function ReportsPage() {
       {/* Range Stats */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">
-          {viewMode === "custom" && dateRange?.from && dateRange?.to
-            ? `Stats from ${format(dateRange.from, "PPP")} to ${format(
-                dateRange.to,
-                "PPP"
-              )}`
-            : `${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Stats`}
+          {dateRange?.from &&
+            dateRange?.to &&
+            `Stats from ${format(dateRange.from, "PPP")} to ${format(
+              dateRange.to,
+              "PPP"
+            )}` + ` (${viewMode.charAt(0).toUpperCase() + viewMode.slice(1)})`}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
@@ -806,10 +806,12 @@ export default function ReportsPage() {
                         "yyyy-MM-dd",
                         new Date()
                       );
-                      setPendingDateRange((prev) => ({
+                      const newDateRange = {
                         from: startOfDay(start),
-                        to: prev?.to || undefined,
-                      }));
+                        to: pendingDateRange?.to || endOfDay(new Date()),
+                      };
+                      setPendingDateRange(newDateRange);
+                      setDateRange(newDateRange);
                     }}
                     className="w-[140px]"
                   />
@@ -826,34 +828,16 @@ export default function ReportsPage() {
                         "yyyy-MM-dd",
                         new Date()
                       );
-                      setPendingDateRange((prev) => ({
-                        from: prev?.from || undefined,
+                      const newDateRange = {
+                        from: pendingDateRange?.from || startOfDay(new Date()),
                         to: endOfDay(end),
-                      }));
+                      };
+                      setPendingDateRange(newDateRange);
+                      setDateRange(newDateRange);
                     }}
                     className="w-[140px]"
                   />
                 </div>
-                <Button
-                  onClick={() => {
-                    if (pendingDateRange?.from && pendingDateRange?.to) {
-                      setDateRange(pendingDateRange);
-                      // setShowCalendar(false);
-                    }
-                  }}
-                  className="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-                >
-                  Apply
-                </Button>
-                {/* button to toggle calendar */}
-                {/* <Button
-                  onClick={() => setShowCalendar(!showCalendar)}
-                  variant="outline"
-                  size="sm"
-                  className="w-10 h-10"
-                >
-                  <CalendarIcon />
-                </Button> */}
               </div>
             )}
           </div>
