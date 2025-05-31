@@ -478,6 +478,10 @@ export default function ReportsPage() {
         "Net Profit",
         totalIncome + totalInterest + totalPenalty - totalExpenses,
       ],
+      [
+        "Total Incomming Amount",
+        totalIncome + totalInstallmentAmount + totalPenalty,
+      ],
     ];
 
     // Add empty row before summary
