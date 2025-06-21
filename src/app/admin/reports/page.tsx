@@ -159,12 +159,12 @@ export default function ReportsPage() {
   }, [viewMode]);
 
   // Fetch all-time stats
-  const fetchAllTimeStats = async (endDate: Date) => {
+  const fetchAllTimeStats = async (startDate: Date) => {
     try {
       setStatsLoading(true);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `/api/admin/reports/stats?endDate=${endDate.toISOString()}`,
+        `/api/admin/reports/stats?startDate=${startDate.toISOString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -316,7 +316,7 @@ export default function ReportsPage() {
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
       fetchTransactions(dateRange.from, dateRange.to);
-      fetchAllTimeStats(dateRange.to);
+      fetchAllTimeStats(dateRange.from);
     }
   }, [dateRange]); // Fetch transactions when date range changes
 
@@ -440,6 +440,7 @@ export default function ReportsPage() {
     // Calculate totals
     let totalExpenses = 0;
     let totalIncome = 0;
+    let totalCapital = 0;
     let totalInterest = 0;
     let totalPenalty = 0;
     let totalExtra = 0;
@@ -465,6 +466,12 @@ export default function ReportsPage() {
       } else if (t.type === "INCOME") {
         displayAmount = Math.abs(t.amount);
         if (t.category !== "NEUTRAL") {
+          totalIncome += Math.abs(t.amount);
+        }
+      } else if (t.type === "CAPITAL") {
+        displayAmount = Math.abs(t.amount);
+        if (t.category !== "NEUTRAL") {
+          totalCapital += Math.abs(t.amount); // Track CAPITAL separately
           totalIncome += Math.abs(t.amount);
         }
       }
@@ -509,27 +516,21 @@ export default function ReportsPage() {
       };
     });
 
-    const openingBalance = stats.openingBalance; // Add empty row
-    const endDate = dateRange?.to || new Date();
-
+    const openingBalance = stats.openingBalance;
     const closingBalance =
-      format(endDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd")
-        ? totalIncome + totalInstallmentAmount - totalExpenses
-        : openingBalance + totalIncome + totalInstallmentAmount - totalExpenses;
+      openingBalance + totalIncome + totalInstallmentAmount - totalExpenses;
     // Add summary details with proper formatting
     const summaryRows: [string, number][] = [
       ["Opening Balance", openingBalance],
+      ["Capital Amount", totalCapital],
       ["Installment Amount", totalInstallmentAmount],
+      ["Income Amount", totalIncome - totalCapital], // Pure income (excluding capital)
       ["Interest Amount", totalInterest],
       ["Penalty Amount", totalPenalty],
       ["Extra Amount", totalExtra],
       ["Expenses", -totalExpenses],
       ["Total Income", totalIncome + totalInstallmentAmount + openingBalance],
       ["Closing Balance", closingBalance],
-      // [
-      //   "Total Incomming Amount",
-      //   totalIncome + totalInstallmentAmount + totalPenalty + totalExtra,
-      // ],
     ];
 
     // Add empty row before summary

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       });
     }
     const { searchParams } = new URL(req.url);
-    const endDate = searchParams.get("endDate") || new Date().toISOString();
+    const startDate = searchParams.get("startDate") || new Date().toISOString();
 
     // Fetch all transactions for stats
     const allTransactions = await prisma.transaction.findMany({
@@ -80,9 +80,7 @@ export async function GET(req: NextRequest) {
     const totalProfit = totalPenaltyAmount + totalIncome - totalExpenses;
 
     const transactionsExcludingToday = transactionsForCalculations.filter(
-      (t) =>
-        new Date(t.createdAt) <
-        new Date(new Date(endDate).getTime() - 1 * 24 * 60 * 60 * 1000) // one day before end date
+      (t) => new Date(t.createdAt) < new Date(new Date(startDate).getTime()) // one day before end date
     );
 
     const totalIncomeExcludingToday =
