@@ -53,6 +53,7 @@ enum TransactionType {
   EXPENSE
   INSTALLMENT
   INCOME
+  CAPITAL
   OTHER
 }
 

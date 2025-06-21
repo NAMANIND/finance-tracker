@@ -384,6 +384,15 @@ async function main() {
         notes: "Test Misc Income",
         createdAt: new Date(),
       },
+    }),
+    prisma.transaction.create({
+      data: {
+        amount: 15000,
+        type: TransactionType.CAPITAL,
+        category: TransactionCategory.INCOME,
+        notes: "Test Capital Investment",
+        createdAt: new Date(),
+      },
     })
   );
 

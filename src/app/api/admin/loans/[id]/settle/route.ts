@@ -75,7 +75,7 @@ export async function POST(
             dueDate: new Date(),
             amount: amount,
             principal: amount,
-            interest: 0,
+            interest: interest || 0,
             installmentAmount: amount,
             extraAmount: extraAmount || 0,
             penaltyAmount: 0,

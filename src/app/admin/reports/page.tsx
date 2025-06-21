@@ -21,7 +21,7 @@ import { Download } from "lucide-react";
 interface Transaction {
   id: string;
   amount: number;
-  type: "EXPENSE" | "INSTALLMENT" | "INCOME";
+  type: "EXPENSE" | "INSTALLMENT" | "INCOME" | "CAPITAL";
   category: string;
   createdAt: string;
   notes?: string;
@@ -37,6 +37,10 @@ interface ReportStats {
   totalInstallmetnsInterest: number;
   totalIncome: number;
   totalPenaltyAmount: number;
+  openingBalance: number;
+  totalCapital: number;
+  totalLoanAmount: number;
+  totalActiveLoansAmount: number;
   transactions: Transaction[];
 }
 
@@ -62,7 +66,11 @@ export default function ReportsPage() {
     totalInstallmetnsInterest: 0,
     totalIncome: 0,
     totalPenaltyAmount: 0,
+    openingBalance: 0,
+    totalCapital: 0,
     transactions: [],
+    totalLoanAmount: 0,
+    totalActiveLoansAmount: 0,
   });
   const [rangeStats, setRangeStats] = useState<RangeStats>({
     profit: 0,
@@ -81,7 +89,6 @@ export default function ReportsPage() {
   const [pendingDateRange, setPendingDateRange] = useState<
     DateRange | undefined
   >(dateRange);
-
   const getDateRangeForViewMode = (
     mode: typeof viewMode
   ): DateRange | undefined => {
@@ -152,15 +159,18 @@ export default function ReportsPage() {
   }, [viewMode]);
 
   // Fetch all-time stats
-  const fetchAllTimeStats = async () => {
+  const fetchAllTimeStats = async (endDate: Date) => {
     try {
       setStatsLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`/api/admin/reports/stats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `/api/admin/reports/stats?endDate=${endDate.toISOString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to fetch stats");
@@ -174,6 +184,10 @@ export default function ReportsPage() {
         totalInstallmetnsInterest: data.totalInstallmetnsInterest,
         totalIncome: data.totalIncome,
         totalPenaltyAmount: data.totalPenaltyAmount,
+        openingBalance: data.openingBalance,
+        totalCapital: data.totalCapital,
+        totalLoanAmount: data.totalLoanAmount,
+        totalActiveLoansAmount: data.totalActiveLoansAmount,
       }));
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -211,7 +225,8 @@ export default function ReportsPage() {
           data.transactions
             .filter(
               (t: Transaction) =>
-                t.type === "INCOME" && t.category !== "NEUTRAL"
+                (t.type === "INCOME" || t.type === "CAPITAL") &&
+                t.category !== "NEUTRAL"
             )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
@@ -223,7 +238,7 @@ export default function ReportsPage() {
                 t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
             )
             .reduce(
-              (sum: number, t: Transaction) => sum + Math.abs(t.interest),
+              (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
             ) +
           data.transactions
@@ -263,7 +278,8 @@ export default function ReportsPage() {
           data.transactions
             .filter(
               (t: Transaction) =>
-                t.type === "INCOME" && t.category !== "NEUTRAL"
+                (t.type === "INCOME" || t.type === "CAPITAL") &&
+                t.category !== "NEUTRAL"
             )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
@@ -298,12 +314,9 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    fetchAllTimeStats();
-  }, []); // Fetch stats only once when component mounts
-
-  useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
       fetchTransactions(dateRange.from, dateRange.to);
+      fetchAllTimeStats(dateRange.to);
     }
   }, [dateRange]); // Fetch transactions when date range changes
 
@@ -496,24 +509,27 @@ export default function ReportsPage() {
       };
     });
 
-    // Add empty row
-    worksheet.addRow([]);
+    const openingBalance = stats.openingBalance; // Add empty row
+    const endDate = dateRange?.to || new Date();
 
+    const closingBalance =
+      format(endDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd")
+        ? totalIncome + totalInstallmentAmount - totalExpenses
+        : openingBalance + totalIncome + totalInstallmentAmount - totalExpenses;
     // Add summary details with proper formatting
     const summaryRows: [string, number][] = [
-      ["Total Expenses", -totalExpenses],
-      ["Total Income", totalIncome + totalInstallmentAmount],
-      ["Total Interest", totalInterest],
-      ["Total Penalty", totalPenalty],
-      ["Total Extra", totalExtra],
-      [
-        "Net Profit",
-        totalIncome + totalInterest + totalPenalty - totalExpenses,
-      ],
-      [
-        "Total Incomming Amount",
-        totalIncome + totalInstallmentAmount + totalPenalty,
-      ],
+      ["Opening Balance", openingBalance],
+      ["Installment Amount", totalInstallmentAmount],
+      ["Interest Amount", totalInterest],
+      ["Penalty Amount", totalPenalty],
+      ["Extra Amount", totalExtra],
+      ["Expenses", -totalExpenses],
+      ["Total Income", totalIncome + totalInstallmentAmount + openingBalance],
+      ["Closing Balance", closingBalance],
+      // [
+      //   "Total Incomming Amount",
+      //   totalIncome + totalInstallmentAmount + totalPenalty + totalExtra,
+      // ],
     ];
 
     // Add empty row before summary
@@ -620,7 +636,7 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
-                All Time Profit
+                All Time Capital
               </dt>
             </CardHeader>
             <CardContent>
@@ -628,12 +644,12 @@ export default function ReportsPage() {
                 {statsLoading ? (
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
-                  `₹${stats.totalProfit.toLocaleString()}`
+                  `₹${stats.totalCapital.toLocaleString()}`
                 )}
               </div>
             </CardContent>
           </Card>
-          <Card>
+          {/* <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Income
@@ -648,8 +664,8 @@ export default function ReportsPage() {
                 )}
               </div>
             </CardContent>
-          </Card>
-          <Card>
+          </Card> */}
+          {/* <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
                 All Time Interest
@@ -664,11 +680,11 @@ export default function ReportsPage() {
                 )}
               </div>
             </CardContent>
-          </Card>
-          <Card>
+          </Card> */}
+          <Card className="bg-green-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <dt className="truncate text-sm font-medium text-gray-500">
-                All Time Penalty
+              <dt className="truncate text-sm font-medium text-green-800">
+                Current Loans Amount
               </dt>
             </CardHeader>
             <CardContent>
@@ -676,15 +692,15 @@ export default function ReportsPage() {
                 {statsLoading ? (
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
-                  `₹${stats.totalPenaltyAmount.toLocaleString()}`
+                  `₹${stats.totalActiveLoansAmount.toLocaleString()}`
                 )}
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-yellow-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <dt className="truncate text-sm font-medium text-gray-500">
-                All Time Expenses
+              <dt className="truncate text-sm font-medium text-yellow-800">
+                All Loans Amount
               </dt>
             </CardHeader>
             <CardContent>
@@ -692,7 +708,7 @@ export default function ReportsPage() {
                 {statsLoading ? (
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
-                  `₹${stats.totalExpenses.toLocaleString()}`
+                  `₹${stats.totalLoanAmount.toLocaleString()}`
                 )}
               </div>
             </CardContent>
@@ -714,7 +730,7 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
-                Period Profit
+                Opening Balance
               </dt>
             </CardHeader>
             <CardContent>
@@ -722,7 +738,7 @@ export default function ReportsPage() {
                 {loading ? (
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
-                  `₹${rangeStats.profit.toLocaleString()}`
+                  `₹${stats.openingBalance.toLocaleString()}`
                 )}
               </div>
             </CardContent>
@@ -730,7 +746,7 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <dt className="truncate text-sm font-medium text-gray-500">
-                Period Income
+                Period Collection
               </dt>
             </CardHeader>
             <CardContent>
@@ -871,6 +887,7 @@ export default function ReportsPage() {
                       setPendingDateRange(newDateRange);
                       setDateRange(newDateRange);
                     }}
+                    max={format(endOfDay(new Date()), "yyyy-MM-dd")}
                     className="w-[140px]"
                   />
                 </div>

@@ -12,11 +12,19 @@ export async function GET(req: NextRequest) {
         status: 401,
       });
     }
+    const { searchParams } = new URL(req.url);
+    const endDate = searchParams.get("endDate") || new Date().toISOString();
 
     // Fetch all transactions for stats
     const allTransactions = await prisma.transaction.findMany({
       orderBy: {
         createdAt: "desc",
+      },
+    });
+
+    const allLoans = await prisma.loan.findMany({
+      where: {
+        status: "ACTIVE",
       },
     });
 
@@ -48,11 +56,49 @@ export async function GET(req: NextRequest) {
         .filter((t) => t.type === "INCOME")
         .reduce((sum, t) => sum + t.amount, 0) + totalInstallmentAmount;
 
-    const totalProfit =
-      totalInstallmetnsInterest +
-      totalPenaltyAmount +
-      totalIncome -
-      totalExpenses;
+    const totalCapital = transactionsForCalculations
+      .filter((t) => t.type === "CAPITAL")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalLoanAmount = allLoans.reduce(
+      (sum, loan) => sum + loan.principalAmount,
+      0
+    );
+
+    const totalActiveLoansAmount = allLoans
+      .filter((loan) => loan.status === "ACTIVE")
+      .reduce((sum, loan) => {
+        // If frequency is weekly, subtract the interest amount from principal
+        if (loan.frequency === "WEEKLY") {
+          const interestAmount =
+            (loan.interestRate * loan.duration * loan.principalAmount) / 100;
+          return sum + loan.principalAmount - interestAmount;
+        }
+        return sum + loan.principalAmount;
+      }, 0);
+
+    const totalProfit = totalPenaltyAmount + totalIncome - totalExpenses;
+
+    const transactionsExcludingToday = transactionsForCalculations.filter(
+      (t) =>
+        new Date(t.createdAt) <
+        new Date(new Date(endDate).getTime() - 1 * 24 * 60 * 60 * 1000) // one day before end date
+    );
+
+    const totalIncomeExcludingToday =
+      transactionsExcludingToday
+        .filter((t) => t.type === "INCOME" || t.type === "CAPITAL")
+        .reduce((sum, t) => sum + t.amount, 0) +
+      transactionsExcludingToday
+        .filter((t) => t.type === "INSTALLMENT")
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalExpensesExcludingToday = transactionsExcludingToday
+      .filter((t) => t.type === "EXPENSE")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const openingBalance =
+      totalIncomeExcludingToday - totalExpensesExcludingToday;
 
     return NextResponse.json({
       totalProfit,
@@ -60,6 +106,10 @@ export async function GET(req: NextRequest) {
       totalInstallmetnsInterest,
       totalIncome,
       totalPenaltyAmount,
+      openingBalance,
+      totalCapital,
+      totalLoanAmount,
+      totalActiveLoansAmount,
     });
   } catch (error) {
     console.error("Error fetching stats:", error);

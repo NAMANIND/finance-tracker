@@ -460,7 +460,7 @@ export default function BorrowerDetailsPage() {
 
   const confirmSettlement = async () => {
     if (!settlementDialog.loanId) return;
-
+    setLoading(true);
     try {
       const loan = borrower?.loans.find(
         (l) => l.id === settlementDialog.loanId
@@ -492,6 +492,11 @@ export default function BorrowerDetailsPage() {
         0
       );
 
+      const pendingInterestAmount = pendingInstallments.reduce(
+        (sum, inst) => sum + inst.interest,
+        0
+      );
+
       // alert(
       //   JSON.stringify({
       //     markPendingAsPaid: pendingInstallmentAmount > 0,
@@ -518,6 +523,7 @@ export default function BorrowerDetailsPage() {
             penaltyAmount: totalPenalties,
             amount:
               differenceInAmounts + totalPenalties + pendingInstallmentAmount,
+            interest: pendingInterestAmount,
           }),
         }
       );
@@ -561,6 +567,8 @@ export default function BorrowerDetailsPage() {
     } catch (error) {
       console.error("Error settling loan:", error);
       toast.error("Failed to settle loan");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1905,7 +1913,7 @@ export default function BorrowerDetailsPage() {
                             </button>
                             <button
                               onClick={confirmSettlement}
-                              disabled={!allPresentItemsChecked}
+                              disabled={!allPresentItemsChecked || loading}
                               className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {settlementDialog.pendingInstallments > 0

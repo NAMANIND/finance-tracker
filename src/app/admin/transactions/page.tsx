@@ -513,7 +513,7 @@ export default function TransactionsPage() {
                     value={formData.type}
                     onValueChange={(value: TransactionType) => {
                       setFormData((prev) => ({ ...prev, type: value }));
-                      if (value === "INCOME") {
+                      if (value === "INCOME" || value === "CAPITAL") {
                         setFormData((prev) => ({
                           ...prev,
                           category: "OFFICE",
@@ -527,6 +527,7 @@ export default function TransactionsPage() {
                     <SelectContent>
                       <SelectItem value="EXPENSE">Expense</SelectItem>
                       <SelectItem value="INCOME">Income</SelectItem>
+                      <SelectItem value="CAPITAL">Capital</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
