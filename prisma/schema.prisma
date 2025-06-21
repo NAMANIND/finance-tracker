@@ -45,6 +45,7 @@ enum TransactionCategory {
   INSTALLMENT
   INCOME
   LOAN
+  NEUTRAL
   OTHER
 }
 

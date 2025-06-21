@@ -209,34 +209,51 @@ export default function ReportsPage() {
       const rangeStats = {
         profit:
           data.transactions
-            .filter((t: Transaction) => t.type === "INCOME")
+            .filter(
+              (t: Transaction) =>
+                t.type === "INCOME" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
             ) +
           data.transactions
-            .filter((t: Transaction) => t.type === "INSTALLMENT")
+            .filter(
+              (t: Transaction) =>
+                t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.interest),
               0
             ) +
           data.transactions
-            .filter((t: Transaction) => t.type === "INSTALLMENT")
+            .filter(
+              (t: Transaction) =>
+                t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.penaltyAmount),
               0
             ) -
           data.transactions
-            .filter((t: Transaction) => t.type === "EXPENSE")
+            .filter(
+              (t: Transaction) =>
+                t.type === "EXPENSE" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
             ),
         expenses: data.transactions
-          .filter((t: Transaction) => t.type === "EXPENSE")
+          .filter(
+            (t: Transaction) => t.type === "EXPENSE" && t.category !== "NEUTRAL"
+          )
           .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
         interest: data.transactions
-          .filter((t: Transaction) => t.type === "INSTALLMENT")
+          .filter(
+            (t: Transaction) =>
+              t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+          )
           .reduce(
             (sum: number, t: Transaction) => sum + Math.abs(t.interest),
             0
@@ -244,20 +261,29 @@ export default function ReportsPage() {
         // Calculate income with installments included
         income:
           data.transactions
-            .filter((t: Transaction) => t.type === "INCOME")
+            .filter(
+              (t: Transaction) =>
+                t.type === "INCOME" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
             ) +
           data.transactions
-            .filter((t: Transaction) => t.type === "INSTALLMENT")
+            .filter(
+              (t: Transaction) =>
+                t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+            )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
             ),
         // Calculate penalty
         penalty: data.transactions
-          .filter((t: Transaction) => t.type === "INSTALLMENT")
+          .filter(
+            (t: Transaction) =>
+              t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+          )
           .reduce(
             (sum: number, t: Transaction) => sum + Math.abs(t.penaltyAmount),
             0
@@ -412,16 +438,22 @@ export default function ReportsPage() {
       let displayAmount = t.amount;
       if (t.type === "EXPENSE") {
         displayAmount = -Math.abs(t.amount);
-        totalExpenses += Math.abs(t.amount);
+        if (t.category !== "NEUTRAL") {
+          totalExpenses += Math.abs(t.amount);
+        }
       } else if (t.type === "INSTALLMENT") {
         displayAmount = Math.abs(t.amount);
-        totalInterest += t.interest;
-        totalPenalty += t.penaltyAmount;
-        totalExtra += t.extraAmount;
-        totalInstallmentAmount += t.amount; // Include installment amount in income
+        if (t.category !== "NEUTRAL") {
+          totalInterest += t.interest;
+          totalPenalty += t.penaltyAmount;
+          totalExtra += t.extraAmount;
+          totalInstallmentAmount += t.amount; // Include installment amount in income
+        }
       } else if (t.type === "INCOME") {
         displayAmount = Math.abs(t.amount);
-        totalIncome += Math.abs(t.amount);
+        if (t.category !== "NEUTRAL") {
+          totalIncome += Math.abs(t.amount);
+        }
       }
 
       const row = worksheet.addRow({

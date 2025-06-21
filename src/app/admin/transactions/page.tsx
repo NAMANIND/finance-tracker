@@ -562,6 +562,7 @@ export default function TransactionsPage() {
                       <SelectItem value="FARM">Farm</SelectItem>
                       <SelectItem value="BHOPAL">Bhopal</SelectItem>
                       <SelectItem value="SAI_BABA">Sai Baba</SelectItem>
+                      <SelectItem value="NEUTRAL">Neutral</SelectItem>
                       <SelectItem value="OTHER">Other</SelectItem>
                     </SelectContent>
                   </Select>

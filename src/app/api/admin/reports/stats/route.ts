@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { TransactionCategory } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,26 +20,31 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Calculate statistics using all transactions
+    // Filter out NEUTRAL category transactions from all calculations
+    const transactionsForCalculations = allTransactions.filter(
+      (t) => t.category !== TransactionCategory.NEUTRAL
+    );
 
-    const totalInstallmetnsInterest = allTransactions
+    // Calculate statistics using filtered transactions
+
+    const totalInstallmetnsInterest = transactionsForCalculations
       .filter((t) => t.type === "INSTALLMENT")
       .reduce((sum, t) => sum + t.interest, 0);
 
-    const totalPenaltyAmount = allTransactions
+    const totalPenaltyAmount = transactionsForCalculations
       .filter((t) => t.type === "INSTALLMENT")
       .reduce((sum, t) => sum + t.penaltyAmount, 0);
 
-    const totalExpenses = allTransactions
+    const totalExpenses = transactionsForCalculations
       .filter((t) => t.type === "EXPENSE")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalInstallmentAmount = allTransactions
+    const totalInstallmentAmount = transactionsForCalculations
       .filter((t) => t.type === "INSTALLMENT")
       .reduce((sum, t) => sum + t.amount, 0);
 
     const totalIncome =
-      allTransactions
+      transactionsForCalculations
         .filter((t) => t.type === "INCOME")
         .reduce((sum, t) => sum + t.amount, 0) + totalInstallmentAmount;
 
