@@ -681,16 +681,16 @@ export default function ReportsPage() {
               </div>
             </CardContent>
           </Card> */}
-          <Card className="bg-green-200">
+          <Card className="bg-green-100">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <dt className="truncate text-sm font-medium text-green-800">
+              <dt className="truncate text-sm font-medium text-green-700">
                 Current Loans Amount
               </dt>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {statsLoading ? (
-                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                  <div className="h-8 w-24 animate-pulse bg-gray-100 rounded" />
                 ) : (
                   `₹${stats.totalActiveLoansAmount.toLocaleString()}`
                 )}
@@ -699,7 +699,7 @@ export default function ReportsPage() {
           </Card>
           <Card className="bg-yellow-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <dt className="truncate text-sm font-medium text-yellow-800">
+              <dt className="truncate text-sm font-medium text-yellow-700">
                 All Loans Amount
               </dt>
             </CardHeader>
