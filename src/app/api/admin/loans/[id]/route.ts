@@ -35,8 +35,13 @@ export async function DELETE(
       );
     }
 
-    // Delete the loan - this will automatically delete all associated installments
-    // due to the cascading delete behavior in Prisma
+    // Since there are no paid installments, we can safely delete all installments first
+    // then delete the loan (Prisma doesn't have cascading delete configured)
+    await prisma.installment.deleteMany({
+      where: { loanId: id },
+    });
+
+    // Now delete the loan
     await prisma.loan.delete({
       where: { id },
     });
@@ -44,7 +49,7 @@ export async function DELETE(
     return NextResponse.json({
       message: "Loan and all its installments deleted successfully",
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error deleting loan:", error);
     return NextResponse.json(
       { error: "Failed to delete loan" },
