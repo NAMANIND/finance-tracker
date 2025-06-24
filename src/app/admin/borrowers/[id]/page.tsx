@@ -151,9 +151,11 @@ export default function BorrowerDetailsPage() {
   const [showLoanDeleteDialog, setShowLoanDeleteDialog] = useState<{
     isOpen: boolean;
     loanId: string | null;
+    confirmDelete: boolean;
   }>({
     isOpen: false,
     loanId: null,
+    confirmDelete: false,
   });
   const [loanDeleteError, setLoanDeleteError] = useState("");
 
@@ -701,6 +703,7 @@ export default function BorrowerDetailsPage() {
       setShowLoanDeleteDialog({
         isOpen: false,
         loanId: null,
+        confirmDelete: false,
       });
       toast.success("Loan deleted successfully");
     } catch (error) {
@@ -1183,12 +1186,14 @@ export default function BorrowerDetailsPage() {
                           {loan.status === "ACTIVE" && (
                             <div className="mt-4 flex justify-between space-x-3">
                               <button
-                                onClick={() =>
+                                onClick={() => {
                                   setShowLoanDeleteDialog({
                                     isOpen: true,
                                     loanId: loan.id,
-                                  })
-                                }
+                                    confirmDelete: false,
+                                  });
+                                  setLoanDeleteError("");
+                                }}
                                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
                               >
                                 Delete Loan
@@ -2216,6 +2221,7 @@ export default function BorrowerDetailsPage() {
             setShowLoanDeleteDialog({
               isOpen: false,
               loanId: null,
+              confirmDelete: false,
             });
             setLoanDeleteError("");
           }
@@ -2234,9 +2240,35 @@ export default function BorrowerDetailsPage() {
                   {borrower?.loans
                     .find((l) => l.id === showLoanDeleteDialog.loanId)
                     ?.installments.some((inst) => inst.status === "PAID") && (
-                    <div className="mt-2 text-yellow-600">
-                      Warning: This loan has paid installments. You cannot
-                      delete a loan with paid installments.
+                    <div className="mt-4 rounded-md bg-yellow-50 p-4">
+                      <div className="flex items-start">
+                        <div className="flex h-6 items-center">
+                          <input
+                            type="checkbox"
+                            checked={showLoanDeleteDialog.confirmDelete}
+                            onChange={(e) =>
+                              setShowLoanDeleteDialog((prev) => ({
+                                ...prev,
+                                confirmDelete: e.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600"
+                          />
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            Warning: This loan has paid installments
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>
+                              Deleting this loan will also remove all related
+                              installment payments and transactions. This action
+                              cannot be undone. Check this box to confirm you
+                              understand the consequences.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
@@ -2249,6 +2281,7 @@ export default function BorrowerDetailsPage() {
                 setShowLoanDeleteDialog({
                   isOpen: false,
                   loanId: null,
+                  confirmDelete: false,
                 });
                 setLoanDeleteError("");
               }}
@@ -2258,9 +2291,17 @@ export default function BorrowerDetailsPage() {
             </button>
             <button
               onClick={handleDeleteLoan}
-              disabled={borrower?.loans
-                .find((l) => l.id === showLoanDeleteDialog.loanId)
-                ?.installments.some((inst) => inst.status === "PAID")}
+              disabled={(() => {
+                const loan = borrower?.loans.find(
+                  (l) => l.id === showLoanDeleteDialog.loanId
+                );
+                const hasPaidInstallments = loan?.installments.some(
+                  (inst) => inst.status === "PAID"
+                );
+                return (
+                  hasPaidInstallments && !showLoanDeleteDialog.confirmDelete
+                );
+              })()}
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Delete

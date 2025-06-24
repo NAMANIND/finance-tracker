@@ -24,24 +24,44 @@ export async function DELETE(
       return NextResponse.json({ error: "Loan not found" }, { status: 404 });
     }
 
-    const hasPaidInstallments = loan.installments.some(
-      (inst) => inst.status === "PAID"
-    );
+    // const hasPaidInstallments = loan.installments.some(
+    //   (inst) => inst.status === "PAID"
+    // );
 
-    if (hasPaidInstallments) {
-      return NextResponse.json(
-        { error: "Cannot delete loan with paid installments" },
-        { status: 400 }
-      );
-    }
+    // if (hasPaidInstallments) {
+    //   return NextResponse.json(
+    //     { error: "Cannot delete loan with paid installments" },
+    //     { status: 400 }
+    //   );
+    // }
 
-    // Since there are no paid installments, we can safely delete all installments first
-    // then delete the loan (Prisma doesn't have cascading delete configured)
+    // Since there are no paid installments, we can safely delete everything in proper order
+    // First, find and delete the loan disbursement transaction
+    await prisma.transaction.deleteMany({
+      where: {
+        type: "EXPENSE",
+        category: "LOAN",
+        notes: {
+          contains: `Loan ID: ${id}`,
+        },
+      },
+    });
+
+    // Delete all installment-related transactions
+    await prisma.transaction.deleteMany({
+      where: {
+        installment: {
+          loanId: id,
+        },
+      },
+    });
+
+    // Delete all installments
     await prisma.installment.deleteMany({
       where: { loanId: id },
     });
 
-    // Now delete the loan
+    // Finally delete the loan
     await prisma.loan.delete({
       where: { id },
     });
