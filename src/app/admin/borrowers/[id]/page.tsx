@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BorrowerDetailsSkeleton } from "@/components/dashboard/BorrowerDetailsSkeleton";
-import { Timer } from "lucide-react";
+import { PencilIcon, Timer } from "lucide-react";
 
 interface Loan {
   id: string;
@@ -158,6 +158,16 @@ export default function BorrowerDetailsPage() {
     confirmDelete: false,
   });
   const [loanDeleteError, setLoanDeleteError] = useState("");
+  const [showUnpaidDialog, setShowUnpaidDialog] = useState<{
+    isOpen: boolean;
+    installmentId: string | null;
+    installmentDate: string | null;
+  }>({
+    isOpen: false,
+    installmentId: null,
+    installmentDate: null,
+  });
+  const [unpaidError, setUnpaidError] = useState("");
 
   useEffect(() => {
     const fetchBorrowerDetails = async () => {
@@ -714,6 +724,56 @@ export default function BorrowerDetailsPage() {
     }
   };
 
+  const handleMarkAsUnpaid = async () => {
+    if (!showUnpaidDialog.installmentId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `/api/admin/installments/${showUnpaidDialog.installmentId}/unpaid`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to mark installment as unpaid");
+      }
+
+      // Refresh borrower details to update the UI
+      const borrowerRes = await fetch(`/api/admin/borrowers/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!borrowerRes.ok) {
+        throw new Error("Failed to fetch updated borrower details");
+      }
+
+      const data = await borrowerRes.json();
+      setBorrower(data);
+      setShowUnpaidDialog({
+        isOpen: false,
+        installmentId: null,
+        installmentDate: null,
+      });
+      setUnpaidError("");
+      toast.success("Installment marked as unpaid successfully");
+    } catch (error) {
+      console.error("Error marking installment as unpaid:", error);
+      setUnpaidError(
+        error instanceof Error
+          ? error.message
+          : "Failed to mark installment as unpaid"
+      );
+    }
+  };
+
   // Sort loans by start date (most recent first)
   const sortedLoans = borrower?.loans || [];
 
@@ -1176,6 +1236,23 @@ export default function BorrowerDetailsPage() {
                                         <span className="ml-2">
                                           {installment.status}
                                         </span>
+                                        {installment.status === "PAID" && (
+                                          <button
+                                            onClick={() => {
+                                              setShowUnpaidDialog({
+                                                isOpen: true,
+                                                installmentId: installment.id,
+                                                installmentDate:
+                                                  installment.dueDate,
+                                              });
+                                              setUnpaidError("");
+                                            }}
+                                            className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 hover:bg-yellow-200 hover:text-yellow-700 transition-colors duration-200"
+                                            title="Mark as unpaid"
+                                          >
+                                            <PencilIcon className="h-3 w-3" />
+                                          </button>
+                                        )}
                                       </div>
                                     </td>
                                   </tr>
@@ -2305,6 +2382,78 @@ export default function BorrowerDetailsPage() {
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark as Unpaid Confirmation Dialog */}
+      <Dialog
+        open={showUnpaidDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowUnpaidDialog({
+              isOpen: false,
+              installmentId: null,
+              installmentDate: null,
+            });
+            setUnpaidError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Installment as Unpaid</DialogTitle>
+            <DialogDescription>
+              {unpaidError ? (
+                <div className="text-red-600">{unpaidError}</div>
+              ) : (
+                <>
+                  <p className="mb-4">
+                    Are you sure you want to mark this installment as unpaid?
+                  </p>
+                  <div className="rounded-md bg-yellow-50 p-4">
+                    <div className="text-sm text-yellow-700">
+                      <p className="font-medium">This action will:</p>
+                      <ul className="mt-2 list-disc list-inside space-y-1">
+                        <li>Remove the associated transaction record</li>
+                        <li>Set the installment status to "PENDING"</li>
+                        <li>
+                          Reset Extra Money, Penalty, and Due Amount to zero
+                        </li>
+                        <li>Clear the paid date</li>
+                      </ul>
+                      <p className="mt-3 font-medium">
+                        Installment Due Date:{" "}
+                        {showUnpaidDialog.installmentDate
+                          ? formatDate(showUnpaidDialog.installmentDate)
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setShowUnpaidDialog({
+                  isOpen: false,
+                  installmentId: null,
+                  installmentDate: null,
+                });
+                setUnpaidError("");
+              }}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleMarkAsUnpaid}
+              className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-500"
+            >
+              Mark as Unpaid
             </button>
           </DialogFooter>
         </DialogContent>
