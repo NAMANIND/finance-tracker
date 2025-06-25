@@ -2417,7 +2417,9 @@ export default function BorrowerDetailsPage() {
                       <p className="font-medium">This action will:</p>
                       <ul className="mt-2 list-disc list-inside space-y-1">
                         <li>Remove the associated transaction record</li>
-                        <li>Set the installment status to "PENDING"</li>
+                        <li>
+                          Set the installment status to &quot;PENDING&quot;
+                        </li>
                         <li>
                           Reset Extra Money, Penalty, and Due Amount to zero
                         </li>
