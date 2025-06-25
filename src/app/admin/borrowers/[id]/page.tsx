@@ -1142,8 +1142,11 @@ export default function BorrowerDetailsPage() {
                           <h4 className="mb-2 text-sm font-medium text-gray-500">
                             Installments
                           </h4>
-                          <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
-                            <table className="min-w-full divide-y divide-gray-200">
+                          <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+                            <table
+                              className="min-w-full divide-y divide-gray-200"
+                              style={{ minWidth: "900px" }}
+                            >
                               <thead className="bg-gray-50">
                                 <tr>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
