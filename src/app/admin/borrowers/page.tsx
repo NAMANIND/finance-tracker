@@ -7,7 +7,6 @@ import {
   PlusCircleIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
-  IdentificationIcon,
   UserGroupIcon,
   CreditCardIcon,
   XMarkIcon,
