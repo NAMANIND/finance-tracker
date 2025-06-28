@@ -3,6 +3,7 @@ import Cookies from "js-cookie";
 // Cookie names
 export const TOKEN_COOKIE = "auth_token";
 export const USER_COOKIE = "user_data";
+export const USE_INSTALLMENT_DUE_DATE_COOKIE = "use_installment_due_date";
 
 // Cookie options
 const cookieOptions = {
@@ -36,4 +37,21 @@ export function getAuthCookies(): { token: string | null; user: User | null } {
 export const removeAuthCookies = () => {
   Cookies.remove(TOKEN_COOKIE);
   Cookies.remove(USER_COOKIE);
+};
+
+// Set use installment due date preference
+export const setUseInstallmentDueDatePreference = (
+  useInstallmentDueDate: boolean
+) => {
+  Cookies.set(
+    USE_INSTALLMENT_DUE_DATE_COOKIE,
+    JSON.stringify(useInstallmentDueDate),
+    cookieOptions
+  );
+};
+
+// Get use installment due date preference
+export const getUseInstallmentDueDatePreference = (): boolean => {
+  const preference = Cookies.get(USE_INSTALLMENT_DUE_DATE_COOKIE);
+  return preference ? JSON.parse(preference) : false;
 };

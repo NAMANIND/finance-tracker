@@ -18,6 +18,10 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { TransactionsSkeleton } from "@/components/dashboard/TransactionsSkeleton";
+import {
+  setUseInstallmentDueDatePreference,
+  getUseInstallmentDueDatePreference,
+} from "@/lib/cookies";
 
 interface Transaction {
   id: string;
@@ -99,6 +103,7 @@ export default function TransactionsPage() {
   });
   const [formError, setFormError] = useState("");
   const [activeTab, setActiveTab] = useState("expense");
+  const [useInstallmentDueDate, setUseInstallmentDueDate] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,6 +148,12 @@ export default function TransactionsPage() {
     };
 
     fetchData();
+  }, []);
+
+  // Load saved checkbox preference on mount
+  useEffect(() => {
+    const savedPreference = getUseInstallmentDueDatePreference();
+    setUseInstallmentDueDate(savedPreference);
   }, []);
 
   // Filter borrowers based on search
@@ -265,6 +276,9 @@ export default function TransactionsPage() {
       installmentAmount: installment.amount.toString(),
       interest: installment.interest,
       dueAmount: 0,
+      installmentDate: useInstallmentDueDate
+        ? new Date(installment.dueDate).toISOString().split("T")[0]
+        : prev.installmentDate,
     }));
   };
 
@@ -924,22 +938,70 @@ export default function TransactionsPage() {
                   )}
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="installmentDate"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Installment Payment Date
-                  </label>
-                  <Input
-                    type="date"
-                    id="installmentDate"
-                    name="installmentDate"
-                    value={formData.installmentDate}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    required
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="useInstallmentDueDate"
+                      checked={useInstallmentDueDate}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setUseInstallmentDueDate(isChecked);
+
+                        // Save preference to cookie
+                        setUseInstallmentDueDatePreference(isChecked);
+
+                        // If checkbox is checked and an installment is selected, update the date
+                        if (isChecked && formData.installmentId) {
+                          const selectedInstallment =
+                            selectedBorrowerInstallments.find(
+                              (inst) => inst.id === formData.installmentId
+                            );
+                          if (selectedInstallment) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              installmentDate: new Date(
+                                selectedInstallment.dueDate
+                              )
+                                .toISOString()
+                                .split("T")[0],
+                            }));
+                          }
+                        }
+                      }}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="useInstallmentDueDate"
+                      className="text-sm font-medium text-gray-700 cursor-pointer"
+                    >
+                      Use installment due date as payment date
+                    </label>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="installmentDate"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Installment Payment Date
+                    </label>
+                    <Input
+                      type="date"
+                      id="installmentDate"
+                      name="installmentDate"
+                      value={formData.installmentDate}
+                      onChange={handleInputChange}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      disabled={useInstallmentDueDate}
+                      required
+                    />
+                    {useInstallmentDueDate && formData.installmentId && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Date automatically set to installment due date
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
