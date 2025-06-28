@@ -495,8 +495,8 @@ export default function BorrowersPage() {
                           {borrower.phone}
                         </div>
                         <div className="mt-1 flex items-center text-sm text-gray-500">
-                          <IdentificationIcon className="mr-2 h-4 w-4 text-gray-400" />
-                          {borrower.panId}
+                          <UserGroupIcon className="mr-2 h-4 w-4 text-gray-400" />
+                          {borrower.guarantorName}
                         </div>
                       </div>
                     </td>
