@@ -90,7 +90,13 @@ export async function PUT(
     }
 
     // Build update data object (only include fields that are provided)
-    const updateData: any = {};
+    const updateData: Partial<{
+      name: string;
+      guarantorName: string;
+      phone: string;
+      address: string;
+      panId: string;
+    }> = {};
     if (name !== undefined) updateData.name = name;
     if (guarantorName !== undefined) updateData.guarantorName = guarantorName;
     if (phone !== undefined) updateData.phone = phone;
