@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface AgentStats {
   totalBorrowers: number;
@@ -68,6 +69,7 @@ export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState<
     "collections" | "clients" | "dues"
   >("collections");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
   const [formData, setFormData] = useState<CollectionFormData>({
     dueAmount: 0,
@@ -118,6 +120,28 @@ export default function AgentDashboard() {
   });
 
   const loading = statsLoading || (activeTab === "clients" && borrowersLoading);
+
+  // Filter data based on search term
+  const filteredPendingsToday =
+    stats?.pendingsToday.filter(
+      (due: AgentStats["pendingsToday"][0]) =>
+        due.borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        due.borrower.phone.includes(searchTerm)
+    ) || [];
+
+  const filteredDuesToday =
+    stats?.duesToday.filter(
+      (due: AgentStats["duesToday"][0]) =>
+        due.borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        due.borrower.phone.includes(searchTerm)
+    ) || [];
+
+  const filteredBorrowers =
+    borrowers?.filter(
+      (borrower: Borrower) =>
+        borrower.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        borrower.phone.includes(searchTerm)
+    ) || [];
 
   const handleCollectClick = (due: AgentStats["duesToday"][0]) => {
     setFormData({
@@ -207,7 +231,7 @@ export default function AgentDashboard() {
         Agent Dashboard
       </h1>
 
-      <div className="mt-6 flex flex-row gap-5">
+      <div className="mt-6 flex flex-col sm:flex-row gap-5">
         {/* Total Borrowers */}
         <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">
@@ -256,7 +280,10 @@ export default function AgentDashboard() {
           aria-label="Tabs"
         >
           <button
-            onClick={() => setActiveTab("collections")}
+            onClick={() => {
+              setActiveTab("collections");
+              setSearchTerm("");
+            }}
             className={`whitespace-nowrap border-b-2 py-3 sm:py-4 px-1 text-sm font-medium ${
               activeTab === "collections"
                 ? "border-indigo-500 text-indigo-600"
@@ -269,7 +296,10 @@ export default function AgentDashboard() {
             </span>
           </button>
           <button
-            onClick={() => setActiveTab("dues")}
+            onClick={() => {
+              setActiveTab("dues");
+              setSearchTerm("");
+            }}
             className={`whitespace-nowrap border-b-2 py-3 sm:py-4 px-1 text-sm font-medium ${
               activeTab === "dues"
                 ? "border-indigo-500 text-indigo-600"
@@ -282,7 +312,10 @@ export default function AgentDashboard() {
             </span>
           </button>
           <button
-            onClick={() => setActiveTab("clients")}
+            onClick={() => {
+              setActiveTab("clients");
+              setSearchTerm("");
+            }}
             className={`whitespace-nowrap border-b-2 py-3 sm:py-4 px-1 text-sm font-medium ${
               activeTab === "clients"
                 ? "border-indigo-500 text-indigo-600"
@@ -297,14 +330,39 @@ export default function AgentDashboard() {
         </nav>
       </div>
 
+      {/* Search Input */}
+      <div className="mt-4">
+        <div className="relative max-w-md">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <Input
+            type="text"
+            placeholder={`Search ${
+              activeTab === "collections"
+                ? "today's collections"
+                : activeTab === "dues"
+                ? "dues"
+                : "clients"
+            }...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+          />
+        </div>
+      </div>
+
       {/* Tab Content */}
       <div className="mt-4">
         {activeTab === "collections" ? (
-          <div className="overflow-hidden rounded-lg bg-white shadow">
-            <ul role="list" className="divide-y divide-gray-200">
-              {stats?.pendingsToday.map(
+          <div className="overflow-hidden">
+            <div role="list" className=" flex-col flex gap-4">
+              {filteredPendingsToday.map(
                 (due: AgentStats["pendingsToday"][0]) => (
-                  <li key={due.installmentId} className="px-4 sm:px-6 py-4">
+                  <div
+                    key={due.installmentId}
+                    className="px-4 sm:px-6 py-4 flex flex-col gap-4 my-4 bg-white  rounded-lg shadow"
+                  >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -338,21 +396,29 @@ export default function AgentDashboard() {
                         </button>
                       </div>
                     </div>
-                  </li>
+                  </div>
                 )
               )}
-              {stats?.duesToday.length === 0 && (
-                <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
-                  No collections due today
-                </li>
+              {filteredPendingsToday.length === 0 && (
+                <div className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
+                  {searchTerm
+                    ? "No collections found matching your search"
+                    : "No collections due today"}
+                </div>
               )}
-            </ul>
+            </div>
           </div>
         ) : activeTab === "dues" ? (
-          <div className="overflow-hidden rounded-lg bg-white shadow">
-            <ul role="list" className="divide-y divide-gray-200">
-              {stats?.duesToday.map((due: AgentStats["duesToday"][0]) => (
-                <li key={due.installmentId} className="px-4 sm:px-6 py-4">
+          <div className="overflow-hidden ">
+            <ul
+              role="list"
+              className="divide-y divide-gray-200 flex flex-col gap-4"
+            >
+              {filteredDuesToday.map((due: AgentStats["duesToday"][0]) => (
+                <li
+                  key={due.installmentId}
+                  className="px-4 sm:px-6 py-4 rounded-lg bg-white shadow"
+                >
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -398,9 +464,11 @@ export default function AgentDashboard() {
                   </div>
                 </li>
               ))}
-              {stats?.duesToday.length === 0 && (
+              {filteredDuesToday.length === 0 && (
                 <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
-                  No dues found
+                  {searchTerm
+                    ? "No dues found matching your search"
+                    : "No dues found"}
                 </li>
               )}
             </ul>
@@ -408,7 +476,7 @@ export default function AgentDashboard() {
         ) : (
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <ul role="list" className="divide-y divide-gray-200">
-              {borrowers?.map((borrower: Borrower) => (
+              {filteredBorrowers.map((borrower: Borrower) => (
                 <li key={borrower.id} className="px-4 sm:px-6 py-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
@@ -423,9 +491,11 @@ export default function AgentDashboard() {
                   </div>
                 </li>
               ))}
-              {borrowers?.length === 0 && (
+              {filteredBorrowers.length === 0 && (
                 <li className="px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
-                  No clients assigned
+                  {searchTerm
+                    ? "No clients found matching your search"
+                    : "No clients assigned"}
                 </li>
               )}
             </ul>

@@ -168,6 +168,9 @@ export default function BorrowerDetailsPage() {
     installmentDate: null,
   });
   const [unpaidError, setUnpaidError] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [editNameError, setEditNameError] = useState("");
 
   useEffect(() => {
     const fetchBorrowerDetails = async () => {
@@ -774,6 +777,55 @@ export default function BorrowerDetailsPage() {
     }
   };
 
+  const handleEditName = () => {
+    setIsEditingName(true);
+    setEditNameValue(borrower?.name || "");
+    setEditNameError("");
+  };
+
+  const handleSaveName = async () => {
+    if (!editNameValue.trim()) {
+      setEditNameError("Name cannot be empty");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/borrowers/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editNameValue.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update borrower name");
+      }
+
+      const updatedBorrower = await res.json();
+      setBorrower(updatedBorrower);
+      setIsEditingName(false);
+      setEditNameError("");
+      toast.success("Borrower name updated successfully!");
+    } catch (error) {
+      console.error("Error updating borrower name:", error);
+      setEditNameError(
+        error instanceof Error ? error.message : "Failed to update name"
+      );
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditNameValue("");
+    setEditNameError("");
+  };
+
   // Sort loans by start date (most recent first)
   const sortedLoans = borrower?.loans || [];
 
@@ -798,10 +850,51 @@ export default function BorrowerDetailsPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
               <UserIcon className="h-8 w-8 text-indigo-600" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {borrower.name}
-              </h1>
+            <div className="flex-1">
+              {isEditingName ? (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="text"
+                      value={editNameValue}
+                      onChange={(e) => setEditNameValue(e.target.value)}
+                      className="text-2xl font-bold text-gray-900 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      placeholder="Enter borrower name"
+                      autoFocus
+                    />
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={handleSaveName}
+                        className="flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  {editNameError && (
+                    <p className="text-sm text-red-600">{editNameError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {borrower.name}
+                  </h1>
+                  <button
+                    onClick={handleEditName}
+                    className="flex items-center rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                    title="Edit borrower name"
+                  >
+                    <PencilIcon className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               <p className="text-sm text-gray-500">ID: {borrower.id}</p>
             </div>
           </div>

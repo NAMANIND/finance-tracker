@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         interest: true,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc",
       },
     });
 

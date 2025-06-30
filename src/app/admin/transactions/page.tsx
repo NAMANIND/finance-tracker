@@ -267,6 +267,14 @@ export default function TransactionsPage() {
   };
 
   const handleInstallmentSelect = (installment: Installment) => {
+    // Safety check: only allow installment selection on borrower payment tab
+    if (activeTab !== "borrower") {
+      console.warn(
+        "Installment selection is only allowed on borrower payment tab"
+      );
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       loanId: installment.loanId,
@@ -293,6 +301,27 @@ export default function TransactionsPage() {
 
     if (!formData.category && formData.type !== TransactionType.INSTALLMENT) {
       setFormError("Category is required for non-installment transactions");
+      return;
+    }
+
+    // Validate that transaction type matches the active tab
+    if (
+      activeTab === "expense" &&
+      formData.type === TransactionType.INSTALLMENT
+    ) {
+      setFormError(
+        "Cannot create installment transaction from expense tab. Please use the Borrower Payment tab."
+      );
+      return;
+    }
+
+    if (
+      activeTab === "borrower" &&
+      formData.type !== TransactionType.INSTALLMENT
+    ) {
+      setFormError(
+        "Borrower Payment tab can only create installment transactions."
+      );
       return;
     }
 
@@ -335,28 +364,56 @@ export default function TransactionsPage() {
         throw new Error(errorData.error || "Failed to add transaction");
       }
 
-      // Reset form
-      setFormData({
-        loanId: "",
-        installmentId: "",
-        amount: 0,
-        type: TransactionType.EXPENSE,
-        category:
-          activeTab === "borrower"
-            ? TransactionCategory.INSTALLMENT
-            : "PERSONAL",
-        notes: "",
-        penaltyAmount: 0,
-        extraAmount: 0,
-        name: "ADMIN",
-        dueAmount: 0,
-        installmentAmount: "",
-        interest: 0,
-        transactionDate: new Date().toISOString().split("T")[0],
-        installmentDate: new Date().toISOString().split("T")[0],
-      });
+      // Reset form based on active tab
+      if (activeTab === "expense") {
+        setFormData({
+          loanId: "",
+          installmentId: "",
+          amount: 0,
+          type: TransactionType.EXPENSE,
+          category: "PERSONAL",
+          notes: "",
+          penaltyAmount: 0,
+          extraAmount: 0,
+          borrowerId: "",
+          name: "ADMIN",
+          dueAmount: 0,
+          installmentAmount: "",
+          interest: 0,
+          transactionDate: new Date().toISOString().split("T")[0],
+          installmentDate: new Date().toISOString().split("T")[0],
+        });
+        setSelectedBorrowerInstallments([]);
+        setBorrowerSearch("");
+      } else {
+        // For borrower payment tab, preserve borrower selection but reset payment fields
+        const currentBorrowerId = formData.borrowerId;
+        const currentBorrowerName = formData.name;
 
-      setSelectedBorrowerInstallments([]);
+        setFormData({
+          loanId: "",
+          installmentId: "",
+          amount: 0,
+          type: TransactionType.INSTALLMENT,
+          category: TransactionCategory.INSTALLMENT,
+          notes: "",
+          penaltyAmount: 0,
+          extraAmount: 0,
+          borrowerId: currentBorrowerId, // Keep borrower selected
+          name: currentBorrowerName, // Keep borrower name
+          dueAmount: 0,
+          installmentAmount: "",
+          interest: 0,
+          transactionDate: new Date().toISOString().split("T")[0],
+          installmentDate: new Date().toISOString().split("T")[0],
+        });
+
+        // Refresh installments for the same borrower if one is selected
+        if (currentBorrowerId) {
+          handleBorrowerChange(currentBorrowerId);
+        }
+        // Don't clear borrower search or installments if borrower is selected
+      }
 
       toast.success("Transaction added successfully!");
 
@@ -481,15 +538,27 @@ export default function TransactionsPage() {
               <TabsTrigger
                 onClick={() => {
                   setActiveTab("expense");
-                  setFormData((prev) => ({
-                    ...prev,
+                  // Reset form data completely for expense tab
+                  setFormData({
+                    loanId: "",
+                    installmentId: "",
+                    amount: 0,
                     type: TransactionType.EXPENSE,
                     category: "PERSONAL",
-                    amount: 0,
                     notes: "",
+                    penaltyAmount: 0,
+                    extraAmount: 0,
+                    borrowerId: "",
                     name: "ADMIN",
-                  }));
-
+                    dueAmount: 0,
+                    installmentAmount: "",
+                    interest: 0,
+                    transactionDate: new Date().toISOString().split("T")[0],
+                    installmentDate: new Date().toISOString().split("T")[0],
+                  });
+                  // Clear borrower-related state
+                  setSelectedBorrowerInstallments([]);
+                  setBorrowerSearch("");
                   setFormError("");
                 }}
                 value="expense"
@@ -499,14 +568,27 @@ export default function TransactionsPage() {
               <TabsTrigger
                 onClick={() => {
                   setActiveTab("borrower");
-                  setFormData((prev) => ({
-                    ...prev,
+                  // Reset form data completely for borrower payment tab
+                  setFormData({
+                    loanId: "",
+                    installmentId: "",
+                    amount: 0,
                     type: TransactionType.INSTALLMENT,
                     category: TransactionCategory.INSTALLMENT,
-                    amount: 0,
                     notes: "",
-                  }));
-                  // clear the error
+                    penaltyAmount: 0,
+                    extraAmount: 0,
+                    borrowerId: "",
+                    name: "",
+                    dueAmount: 0,
+                    installmentAmount: "",
+                    interest: 0,
+                    transactionDate: new Date().toISOString().split("T")[0],
+                    installmentDate: new Date().toISOString().split("T")[0],
+                  });
+                  // Clear borrower-related state
+                  setSelectedBorrowerInstallments([]);
+                  setBorrowerSearch("");
                   setFormError("");
                 }}
                 value="borrower"
