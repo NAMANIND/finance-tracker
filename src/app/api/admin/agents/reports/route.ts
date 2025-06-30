@@ -84,7 +84,15 @@ export async function GET(req: NextRequest) {
       );
       const collected = allInstallments
         .filter((inst) => inst.status === "PAID")
-        .reduce((sum, inst) => sum + inst.amount, 0);
+        .reduce(
+          (sum, inst) =>
+            sum +
+            inst.amount +
+            inst.extraAmount +
+            inst.penaltyAmount -
+            inst.dueAmount,
+          0
+        );
       const pending = allInstallments
         .filter((inst) => inst.status === "PENDING")
         .reduce((sum, inst) => sum + inst.amount, 0);

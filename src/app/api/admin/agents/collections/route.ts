@@ -85,7 +85,8 @@ export async function GET(request: NextRequest) {
                     ? instTotal +
                       inst.amount +
                       inst.extraAmount +
-                      inst.penaltyAmount
+                      inst.penaltyAmount -
+                      inst.dueAmount
                     : instTotal,
                 0
               )
