@@ -29,6 +29,13 @@ interface Transaction {
   penaltyAmount: number;
   extraAmount: number;
   interest: number;
+  installment?: {
+    loan?: {
+      borrower?: {
+        guarantorName?: string;
+      };
+    };
+  };
 }
 
 interface ReportStats {
@@ -920,6 +927,9 @@ export default function ReportsPage() {
                 Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Guarantor
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -951,7 +961,7 @@ export default function ReportsPage() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-8 text-muted-foreground"
                 >
                   Loading...
@@ -960,7 +970,7 @@ export default function ReportsPage() {
             ) : stats.transactions.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No transactions found in the selected date range
@@ -974,6 +984,10 @@ export default function ReportsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {transaction.name || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {transaction.installment?.loan?.borrower?.guarantorName ||
+                      "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {transaction.type}
@@ -1057,7 +1071,7 @@ export default function ReportsPage() {
           {/* Summary row */}
           <tfoot>
             <tr className="bg-gray-100 text-sm font-semibold">
-              <td className="px-6 py-3" colSpan={4}>
+              <td className="px-6 py-3" colSpan={5}>
                 Period Totals
               </td>
               <td
