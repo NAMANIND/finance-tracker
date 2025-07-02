@@ -610,7 +610,7 @@ export default function BorrowerDetailsPage() {
 
   const handleManualSettlement = async () => {
     if (!settlementDialog.loanId) return;
-
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
@@ -676,6 +676,8 @@ export default function BorrowerDetailsPage() {
     } catch (error) {
       console.error("Error settling loan:", error);
       toast.error("Failed to settle loan");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -2805,7 +2807,9 @@ export default function BorrowerDetailsPage() {
                         </button>
                         <button
                           onClick={handleManualSettlement}
-                          disabled={!settlementDialog.manualSettlement.amount}
+                          disabled={
+                            !settlementDialog.manualSettlement.amount || loading
+                          }
                           className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Settle Loan
