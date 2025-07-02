@@ -4,6 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { TransactionType, TransactionCategory } from "@prisma/client";
 
+// Interface for transaction update fields
+interface TransactionUpdateFields {
+  amount?: number;
+  type?: TransactionType;
+  category?: TransactionCategory;
+  notes?: string | null;
+  name?: string | null;
+  addedBy?: string | null;
+  penaltyAmount?: number;
+  extraAmount?: number;
+  interest?: number;
+  createdAt?: Date;
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -126,7 +140,7 @@ export async function PATCH(
     }
 
     // Build the update object
-    const updateFields: any = {};
+    const updateFields: TransactionUpdateFields = {};
 
     if (updateData.amount !== undefined)
       updateFields.amount = Number(updateData.amount);
