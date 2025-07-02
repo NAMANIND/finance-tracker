@@ -30,6 +30,7 @@ interface Installment {
   borrowerName: string;
   borrowerPhone: string;
   loanId: string;
+  paidAt: string | null;
 }
 
 interface Agent {
@@ -529,10 +530,20 @@ export default function AgentReportsPage() {
                                       {installment.borrowerName}
                                     </p>
                                     <p className="text-sm text-gray-500">
+                                      Due date:{" "}
                                       {formatDate(
                                         installment.dueDate,
                                         "dd MMM yyyy"
                                       )}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      Paid on:{" "}
+                                      {installment.paidAt
+                                        ? formatDate(
+                                            installment.paidAt,
+                                            "dd MMM yyyy"
+                                          )
+                                        : "N/A"}
                                     </p>
                                   </div>
                                 </div>

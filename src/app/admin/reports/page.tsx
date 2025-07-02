@@ -300,6 +300,15 @@ export default function ReportsPage() {
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
               0
+            ) +
+          data.transactions
+            .filter(
+              (t: Transaction) =>
+                t.type === "INSTALLMENT" && t.category !== "NEUTRAL"
+            )
+            .reduce(
+              (sum: number, t: Transaction) => sum + Math.abs(t.penaltyAmount),
+              0
             ),
         // Calculate penalty
         penalty: data.transactions

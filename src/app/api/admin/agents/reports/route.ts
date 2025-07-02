@@ -29,14 +29,28 @@ export async function GET(req: NextRequest) {
                   where:
                     startDate && endDate
                       ? {
-                          dueDate: {
-                            gte: startOfDay(
-                              parse(startDate, "yyyy-MM-dd", new Date())
-                            ),
-                            lte: endOfDay(
-                              parse(endDate, "yyyy-MM-dd", new Date())
-                            ),
-                          },
+                          OR: [
+                            {
+                              dueDate: {
+                                gte: startOfDay(
+                                  parse(startDate, "yyyy-MM-dd", new Date())
+                                ),
+                                lte: endOfDay(
+                                  parse(endDate, "yyyy-MM-dd", new Date())
+                                ),
+                              },
+                            },
+                            {
+                              paidAt: {
+                                gte: startOfDay(
+                                  parse(startDate, "yyyy-MM-dd", new Date())
+                                ),
+                                lte: endOfDay(
+                                  parse(endDate, "yyyy-MM-dd", new Date())
+                                ),
+                              },
+                            },
+                          ],
                         }
                       : undefined,
                   include: {
@@ -106,6 +120,7 @@ export async function GET(req: NextRequest) {
         amount: installment.amount,
         status: installment.status,
         dueDate: installment.dueDate,
+        paidAt: installment.status === "PAID" ? installment.paidAt : null,
         borrowerName: installment.loan.borrower.name,
         borrowerPhone: installment.loan.borrower.phone,
         loanId: installment.loan.id,
