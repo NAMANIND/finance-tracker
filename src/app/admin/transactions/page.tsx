@@ -55,6 +55,7 @@ interface Installment {
   status: "PENDING" | "PAID" | "OVERDUE";
   borrowerName?: string;
   borrowerPhone?: string;
+  frequency: string;
 }
 
 interface NewTransactionForm {
@@ -986,6 +987,11 @@ export default function TransactionsPage() {
                             <div>
                               <span className="text-gray-500">Interest:</span> ₹
                               {installment.interest.toLocaleString()}
+                            </div>
+                            <div>
+                              <span className=" text-purple-700 ">
+                                {installment.frequency}
+                              </span>{" "}
                             </div>
                           </div>
                         </button>

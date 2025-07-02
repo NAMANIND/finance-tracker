@@ -12,7 +12,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const pendingInstallment = await prisma.installment.findFirstOrThrow({
+    const pendingInstallment = await prisma.installment.findFirst({
       where: {
         loan: {
           borrowerId: id,
@@ -34,14 +34,29 @@ export async function GET(
         },
         status: "OVERDUE",
       },
+      include: {
+        loan: true,
+      },
+      orderBy: {
+        dueDate: "asc",
+      },
     });
 
-    const installments = [...overdueInstallments, pendingInstallment];
+    const installments: typeof overdueInstallments = [];
+
+    if (pendingInstallment && overdueInstallments.length > 0) {
+      installments.push(...overdueInstallments, pendingInstallment);
+    } else if (pendingInstallment) {
+      installments.push(pendingInstallment);
+    } else if (overdueInstallments.length > 0) {
+      installments.push(...overdueInstallments);
+    }
 
     const formattedInstallments = installments.map((installment) => ({
       ...installment,
       amount: installment.amount,
       installmentAmount: installment.installmentAmount,
+      frequency: installment.loan.frequency,
     }));
 
     return NextResponse.json(formattedInstallments);
