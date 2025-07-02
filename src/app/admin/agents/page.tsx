@@ -341,7 +341,7 @@ export default function AgentsPage() {
       )}
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

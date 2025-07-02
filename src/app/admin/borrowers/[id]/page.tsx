@@ -1255,20 +1255,21 @@ export default function BorrowerDetailsPage() {
                                     Installment
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    Extra Money
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    Due Amount
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Principal
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Interest
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Extra Money
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Penalty
                                   </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Due Amount
-                                  </th>
+
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Status
                                   </th>
@@ -1294,27 +1295,10 @@ export default function BorrowerDetailsPage() {
                                       )}
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                      {formatCurrency(installment.principal)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                      {formatCurrency(installment.interest)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                                       {installment.extraAmount > 0 ? (
                                         <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                                           {formatCurrency(
                                             installment.extraAmount
-                                          )}
-                                        </span>
-                                      ) : (
-                                        formatCurrency(0)
-                                      )}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                      {installment.penaltyAmount > 0 ? (
-                                        <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                          {formatCurrency(
-                                            installment.penaltyAmount
                                           )}
                                         </span>
                                       ) : (
@@ -1332,6 +1316,25 @@ export default function BorrowerDetailsPage() {
                                         formatCurrency(0)
                                       )}
                                     </td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {formatCurrency(installment.principal)}
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {formatCurrency(installment.interest)}
+                                    </td>
+
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                                      {installment.penaltyAmount > 0 ? (
+                                        <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                                          {formatCurrency(
+                                            installment.penaltyAmount
+                                          )}
+                                        </span>
+                                      ) : (
+                                        formatCurrency(0)
+                                      )}
+                                    </td>
+
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                                       <div className="flex items-center">
                                         {getStatusIcon(installment.status)}
@@ -1443,25 +1446,6 @@ export default function BorrowerDetailsPage() {
                   </div>
                   <div>
                     <label
-                      htmlFor="startDate"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      EMI Start Date
-                    </label>
-                    <div className="mt-1">
-                      <Input
-                        type="date"
-                        id="startDate"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleInputChange}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label
                       htmlFor="createdDate"
                       className="block text-sm font-medium text-gray-700"
                     >
@@ -1479,6 +1463,26 @@ export default function BorrowerDetailsPage() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label
+                      htmlFor="startDate"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      EMI Start Date
+                    </label>
+                    <div className="mt-1">
+                      <Input
+                        type="date"
+                        id="startDate"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleInputChange}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label
                       htmlFor="loanDurationMonths"
