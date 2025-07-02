@@ -1238,10 +1238,13 @@ export default function BorrowerDetailsPage() {
                           <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
                             <table
                               className="min-w-full divide-y divide-gray-200"
-                              style={{ minWidth: "900px" }}
+                              style={{ minWidth: "950px" }}
                             >
                               <thead className="bg-gray-50">
                                 <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    S.No.
+                                  </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Due Date
                                   </th>
@@ -1272,8 +1275,11 @@ export default function BorrowerDetailsPage() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200 bg-white">
-                                {loan.installments.map((installment) => (
+                                {loan.installments.map((installment, index) => (
                                   <tr key={installment.id}>
+                                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+                                      {index + 1}
+                                    </td>
                                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                                       {formatDate(installment.dueDate)}
                                     </td>
