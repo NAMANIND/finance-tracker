@@ -25,6 +25,7 @@ export async function POST(
       amount,
       interest,
       settlementType,
+      settlementDate,
     } = await req.json();
 
     // Get the loan and its installments
@@ -62,7 +63,7 @@ export async function POST(
               where: { id: installment.id },
               data: {
                 status: "PAID",
-                paidAt: new Date(),
+                paidAt: settlementDate ? new Date(settlementDate) : new Date(),
               },
             }),
           ]);
@@ -80,7 +81,7 @@ export async function POST(
             extraAmount: extraAmount || 0,
             penaltyAmount: 0,
             status: "PAID",
-            paidAt: new Date(),
+            paidAt: settlementDate ? new Date(settlementDate) : new Date(),
           },
         });
       }
@@ -94,7 +95,10 @@ export async function POST(
       // update all of there staute to cancelled
       await prisma.installment.updateMany({
         where: { id: { in: unpaidInstallments.map((inst) => inst.id) } },
-        data: { status: "SKIPPED" },
+        data: {
+          status: "SKIPPED",
+          paidAt: settlementDate ? new Date(settlementDate) : new Date(),
+        },
       });
 
       // make a new installment with the amount
@@ -109,7 +113,7 @@ export async function POST(
           extraAmount: extraAmount || 0,
           penaltyAmount: penaltyAmount || 0,
           status: "PAID",
-          paidAt: new Date(),
+          paidAt: settlementDate ? new Date(settlementDate) : new Date(),
         },
       });
     }
@@ -127,6 +131,7 @@ export async function POST(
         name: loan.borrower.name + " -  SETTLED",
         interest: interest || 0,
         addedBy: "ADMIN",
+        createdAt: settlementDate ? new Date(settlementDate) : new Date(),
       },
     });
 

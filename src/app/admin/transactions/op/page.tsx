@@ -2,10 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  Trash2,
+  ArrowUpRight,
+  ArrowDownRight,
+  Edit,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,14 +46,69 @@ interface Transaction {
   installmentId: string | null;
 }
 
+interface EditFormData {
+  amount: number;
+  type: string;
+  category: string;
+  notes: string;
+  name: string;
+  addedBy: string;
+  penaltyAmount: number;
+  extraAmount: number;
+  interest: number;
+  createdAt: string;
+}
+
 export default function TransactionOperationsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     transaction: Transaction | null;
   }>({ open: false, transaction: null });
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    transaction: Transaction | null;
+  }>({ open: false, transaction: null });
+  const [editForm, setEditForm] = useState<EditFormData>({
+    amount: 0,
+    type: "",
+    category: "",
+    notes: "",
+    name: "",
+    addedBy: "",
+    penaltyAmount: 0,
+    extraAmount: 0,
+    interest: 0,
+    createdAt: "",
+  });
   const [deleting, setDeleting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+
+  const transactionTypes = [
+    "EXPENSE",
+    "INCOME",
+    "INSTALLMENT",
+    "CAPITAL",
+    "OTHER",
+  ];
+  const transactionCategories = [
+    "HOME",
+    "CAR",
+    "OFFICE",
+    "EMI",
+    "INTEREST",
+    "FARM",
+    "BHOPAL",
+    "SAI_BABA",
+    "PERSONAL",
+    "INSTALLMENT",
+    "INCOME",
+    "LOAN",
+    "NEUTRAL",
+    "OTHER",
+  ];
 
   useEffect(() => {
     fetchTransactions();
@@ -67,8 +137,95 @@ export default function TransactionOperationsPage() {
     }
   };
 
+  // Filter transactions based on search term
+  const filteredTransactions = transactions.filter((transaction) => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      transaction.name?.toLowerCase().includes(searchLower) ||
+      transaction.notes?.toLowerCase().includes(searchLower) ||
+      transaction.type.toLowerCase().includes(searchLower) ||
+      transaction.category.toLowerCase().includes(searchLower) ||
+      transaction.addedBy?.toLowerCase().includes(searchLower) ||
+      transaction.amount.toString().includes(searchLower)
+    );
+  });
+
   const handleDeleteClick = (transaction: Transaction) => {
     setDeleteDialog({ open: true, transaction });
+  };
+
+  const handleEditClick = (transaction: Transaction) => {
+    setEditForm({
+      amount: transaction.amount,
+      type: transaction.type,
+      category: transaction.category,
+      notes: transaction.notes || "",
+      name: transaction.name || "",
+      addedBy: transaction.addedBy || "",
+      penaltyAmount: transaction.penaltyAmount,
+      extraAmount: transaction.extraAmount,
+      interest: transaction.interest,
+      createdAt: transaction.createdAt.split("T")[0],
+    });
+    setEditDialog({ open: true, transaction });
+  };
+
+  const handleEditFormChange = (
+    field: keyof EditFormData,
+    value: string | number
+  ) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleEditConfirm = async () => {
+    if (!editDialog.transaction) return;
+
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `/api/admin/transactions/${editDialog.transaction.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...editForm,
+            createdAt: new Date(editForm.createdAt).toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update transaction");
+      }
+
+      const updatedTransaction = await response.json();
+      toast.success("Transaction updated successfully");
+
+      // Update the transaction in the list
+      setTransactions((prev) =>
+        prev.map((t) =>
+          t.id === editDialog.transaction!.id ? updatedTransaction : t
+        )
+      );
+
+      setEditDialog({ open: false, transaction: null });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update transaction";
+      toast.error(errorMessage);
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -157,15 +314,28 @@ export default function TransactionOperationsPage() {
             Transaction Operations
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage and delete transactions in the system
+            Manage, edit, and delete transactions in the system
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
-            {transactions.length} Total Transactions
+            {filteredTransactions.length} of {transactions.length} Transactions
           </span>
         </div>
       </div>
+
+      {/* Search Bar */}
+      <Card className="p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Search transactions by name, notes, type, category, amount, or added by..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </Card>
 
       {/* Transactions List */}
       <Card className="overflow-hidden">
@@ -197,7 +367,7 @@ export default function TransactionOperationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((transaction) => (
+              {filteredTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -252,14 +422,24 @@ export default function TransactionOperationsPage() {
                     {transaction.addedBy || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteClick(transaction)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClick(transaction)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteClick(transaction)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -267,12 +447,212 @@ export default function TransactionOperationsPage() {
           </table>
         </div>
 
-        {transactions.length === 0 && (
+        {filteredTransactions.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500">No transactions found</div>
           </div>
         )}
       </Card>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog
+        open={editDialog.open}
+        onOpenChange={(open) =>
+          setEditDialog({ open, transaction: editDialog.transaction })
+        }
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogDescription>
+              Update the transaction details below.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount
+                </label>
+                <Input
+                  type="number"
+                  value={editForm.amount}
+                  onChange={(e) =>
+                    handleEditFormChange(
+                      "amount",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
+                <Input
+                  type="date"
+                  value={editForm.createdAt}
+                  onChange={(e) =>
+                    handleEditFormChange("createdAt", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type
+                </label>
+                <Select
+                  value={editForm.type}
+                  onValueChange={(value) => handleEditFormChange("type", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transactionTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <Select
+                  value={editForm.category}
+                  onValueChange={(value) =>
+                    handleEditFormChange("category", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transactionCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                </label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => handleEditFormChange("name", e.target.value)}
+                  placeholder="Transaction name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Added By
+                </label>
+                <Input
+                  value={editForm.addedBy}
+                  onChange={(e) =>
+                    handleEditFormChange("addedBy", e.target.value)
+                  }
+                  placeholder="Added by"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Penalty Amount
+                </label>
+                <Input
+                  type="number"
+                  value={editForm.penaltyAmount}
+                  onChange={(e) =>
+                    handleEditFormChange(
+                      "penaltyAmount",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Extra Amount
+                </label>
+                <Input
+                  type="number"
+                  value={editForm.extraAmount}
+                  onChange={(e) =>
+                    handleEditFormChange(
+                      "extraAmount",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Interest
+                </label>
+                <Input
+                  type="number"
+                  value={editForm.interest}
+                  onChange={(e) =>
+                    handleEditFormChange(
+                      "interest",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => handleEditFormChange("notes", e.target.value)}
+                rows={3}
+                placeholder="Transaction notes"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialog({ open: false, transaction: null })}
+              disabled={updating}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditConfirm} disabled={updating}>
+              {updating ? "Updating..." : "Update Transaction"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog

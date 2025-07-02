@@ -122,6 +122,7 @@ export default function BorrowerDetailsPage() {
       penalties: boolean;
     };
     settlementType: "automatic" | "manual";
+    settlementDate: string;
     manualSettlement: {
       amount: string;
       extraMoney: string;
@@ -139,6 +140,7 @@ export default function BorrowerDetailsPage() {
       penalties: false,
     },
     settlementType: "automatic",
+    settlementDate: new Date().toISOString().split("T")[0],
     manualSettlement: {
       amount: "",
       extraMoney: "",
@@ -452,6 +454,7 @@ export default function BorrowerDetailsPage() {
         penalties: false,
       },
       settlementType: "automatic",
+      settlementDate: new Date().toISOString().split("T")[0],
       manualSettlement: {
         amount: "",
         extraMoney: "",
@@ -539,6 +542,7 @@ export default function BorrowerDetailsPage() {
             amount:
               differenceInAmounts + totalPenalties + pendingInstallmentAmount,
             interest: pendingInterestAmount,
+            settlementDate: settlementDialog.settlementDate,
           }),
         }
       );
@@ -571,6 +575,7 @@ export default function BorrowerDetailsPage() {
           penalties: false,
         },
         settlementType: "automatic",
+        settlementDate: new Date().toISOString().split("T")[0],
         manualSettlement: {
           amount: "",
           extraMoney: "",
@@ -610,6 +615,7 @@ export default function BorrowerDetailsPage() {
             amount: parseFloat(settlementDialog.manualSettlement.amount) || 0,
             interest:
               parseFloat(settlementDialog.manualSettlement.interest) || 0,
+            settlementDate: settlementDialog.settlementDate,
           }),
         }
       );
@@ -642,6 +648,7 @@ export default function BorrowerDetailsPage() {
           penalties: false,
         },
         settlementType: "automatic",
+        settlementDate: new Date().toISOString().split("T")[0],
         manualSettlement: {
           amount: "",
           extraMoney: "",
@@ -1695,6 +1702,7 @@ export default function BorrowerDetailsPage() {
                 penalties: false,
               },
               settlementType: "automatic",
+              settlementDate: new Date().toISOString().split("T")[0],
               manualSettlement: {
                 amount: "",
                 extraMoney: "",
@@ -1843,6 +1851,28 @@ export default function BorrowerDetailsPage() {
                       return (
                         <div className="space-y-4">
                           <div className="rounded-lg border border-gray-200 bg-white p-4">
+                            <div className="mb-4">
+                              <label
+                                htmlFor="settlementDate"
+                                className="block text-sm font-medium text-gray-700"
+                              >
+                                Settlement Date
+                              </label>
+                              <div className="mt-1">
+                                <Input
+                                  type="date"
+                                  id="settlementDate"
+                                  value={settlementDialog.settlementDate}
+                                  onChange={(e) =>
+                                    setSettlementDialog((prev) => ({
+                                      ...prev,
+                                      settlementDate: e.target.value,
+                                    }))
+                                  }
+                                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                />
+                              </div>
+                            </div>
                             <div className="space-y-2">
                               <div className="flex justify-between border-b border-gray-100 pb-2">
                                 <span className="text-gray-600">
@@ -2087,6 +2117,9 @@ export default function BorrowerDetailsPage() {
                                     penalties: false,
                                   },
                                   settlementType: "automatic",
+                                  settlementDate: new Date()
+                                    .toISOString()
+                                    .split("T")[0],
                                   manualSettlement: {
                                     amount: "",
                                     extraMoney: "",
@@ -2116,6 +2149,28 @@ export default function BorrowerDetailsPage() {
                     <div className="space-y-4">
                       <div className="rounded-lg border border-gray-200 bg-white p-4">
                         <div className="space-y-4">
+                          <div>
+                            <label
+                              htmlFor="settlementDateManual"
+                              className="block text-sm font-medium text-gray-700"
+                            >
+                              Settlement Date
+                            </label>
+                            <div className="mt-1">
+                              <Input
+                                type="date"
+                                id="settlementDateManual"
+                                value={settlementDialog.settlementDate}
+                                onChange={(e) =>
+                                  setSettlementDialog((prev) => ({
+                                    ...prev,
+                                    settlementDate: e.target.value,
+                                  }))
+                                }
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                          </div>
                           <div>
                             <label
                               htmlFor="amount"
@@ -2327,6 +2382,9 @@ export default function BorrowerDetailsPage() {
                                 penalties: false,
                               },
                               settlementType: "automatic",
+                              settlementDate: new Date()
+                                .toISOString()
+                                .split("T")[0],
                               manualSettlement: {
                                 amount: "",
                                 extraMoney: "",
