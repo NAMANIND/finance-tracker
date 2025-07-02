@@ -217,7 +217,7 @@ export default function NewLoanPage() {
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
                       <Input
-                        type="number"
+                        type="string"
                         name="principalAmount"
                         id="principalAmount"
                         value={formData.principalAmount}
@@ -245,7 +245,7 @@ export default function NewLoanPage() {
                     </label>
                     <div className="mt-1 relative rounded-md shadow-sm">
                       <Input
-                        type="number"
+                        type="string"
                         name="interestRate"
                         id="interestRate"
                         value={formData.interestRate}

@@ -688,7 +688,7 @@ export default function TransactionsPage() {
                     Amount
                   </label>
                   <Input
-                    type="number"
+                    type="string"
                     id="amount"
                     name="amount"
                     placeholder="Enter amount"
@@ -1023,7 +1023,7 @@ export default function TransactionsPage() {
                     Amount
                   </label>
                   <Input
-                    type="number"
+                    type="string"
                     id="amount"
                     name="amount"
                     value={formData.amount}
@@ -1116,7 +1116,7 @@ export default function TransactionsPage() {
                       Penalty Amount
                     </label>
                     <Input
-                      type="number"
+                      type="string"
                       id="penaltyAmount"
                       name="penaltyAmount"
                       value={
@@ -1139,7 +1139,7 @@ export default function TransactionsPage() {
                       Extra Amount
                     </label>
                     <Input
-                      type="number"
+                      type="string"
                       id="extraAmount"
                       name="extraAmount"
                       value={
@@ -1161,7 +1161,7 @@ export default function TransactionsPage() {
                     Interest Value
                   </label>
                   <Input
-                    type="number"
+                    type="string"
                     id="interest"
                     name="interest"
                     value={formData.interest}

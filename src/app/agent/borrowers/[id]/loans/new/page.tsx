@@ -78,7 +78,7 @@ export default function NewLoan() {
             </label>
             <div className="mt-1">
               <Input
-                type="number"
+                type="string"
                 name="principalAmount"
                 id="principalAmount"
                 required
@@ -98,7 +98,7 @@ export default function NewLoan() {
             </label>
             <div className="mt-1">
               <Input
-                type="number"
+                type="string"
                 name="interestRate"
                 id="interestRate"
                 required
@@ -119,7 +119,7 @@ export default function NewLoan() {
             </label>
             <div className="mt-1">
               <Input
-                type="number"
+                type="string"
                 name="duration"
                 id="duration"
                 required

@@ -530,7 +530,7 @@ export default function AgentDashboard() {
                 Amount
               </label>
               <Input
-                type="number"
+                type="string"
                 id="amount"
                 name="amount"
                 value={formData.amount || ""}
@@ -556,7 +556,7 @@ export default function AgentDashboard() {
                   Penalty Amount
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   id="penaltyAmount"
                   name="penaltyAmount"
                   value={formData.penaltyAmount || ""}
@@ -576,7 +576,7 @@ export default function AgentDashboard() {
                   Extra Amount
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   id="extraAmount"
                   name="extraAmount"
                   value={formData.extraAmount || ""}

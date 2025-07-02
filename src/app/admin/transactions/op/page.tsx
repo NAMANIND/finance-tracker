@@ -476,7 +476,7 @@ export default function TransactionOperationsPage() {
                   Amount
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   value={editForm.amount}
                   onChange={(e) =>
                     handleEditFormChange(
@@ -578,7 +578,7 @@ export default function TransactionOperationsPage() {
                   Penalty Amount
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   value={editForm.penaltyAmount}
                   onChange={(e) =>
                     handleEditFormChange(
@@ -595,7 +595,7 @@ export default function TransactionOperationsPage() {
                   Extra Amount
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   value={editForm.extraAmount}
                   onChange={(e) =>
                     handleEditFormChange(
@@ -612,7 +612,7 @@ export default function TransactionOperationsPage() {
                   Interest
                 </label>
                 <Input
-                  type="number"
+                  type="string"
                   value={editForm.interest}
                   onChange={(e) =>
                     handleEditFormChange(

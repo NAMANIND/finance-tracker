@@ -174,6 +174,22 @@ export default function BorrowerDetailsPage() {
   const [editNameValue, setEditNameValue] = useState("");
   const [editNameError, setEditNameError] = useState("");
 
+  const [isEditingGuarantor, setIsEditingGuarantor] = useState(false);
+  const [editGuarantorValue, setEditGuarantorValue] = useState("");
+  const [editGuarantorError, setEditGuarantorError] = useState("");
+
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [editPhoneValue, setEditPhoneValue] = useState("");
+  const [editPhoneError, setEditPhoneError] = useState("");
+
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [editAddressValue, setEditAddressValue] = useState("");
+  const [editAddressError, setEditAddressError] = useState("");
+
+  const [isEditingPanId, setIsEditingPanId] = useState(false);
+  const [editPanIdValue, setEditPanIdValue] = useState("");
+  const [editPanIdError, setEditPanIdError] = useState("");
+
   useEffect(() => {
     const fetchBorrowerDetails = async () => {
       try {
@@ -833,6 +849,222 @@ export default function BorrowerDetailsPage() {
     setEditNameError("");
   };
 
+  // Guarantor Name editing functions
+  const handleEditGuarantor = () => {
+    setIsEditingGuarantor(true);
+    setEditGuarantorValue(borrower?.guarantorName || "");
+    setEditGuarantorError("");
+  };
+
+  const handleSaveGuarantor = async () => {
+    if (!editGuarantorValue.trim()) {
+      setEditGuarantorError("Guarantor name cannot be empty");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/borrowers/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          guarantorName: editGuarantorValue.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update guarantor name");
+      }
+
+      const updatedBorrower = await res.json();
+      setBorrower(updatedBorrower);
+      setIsEditingGuarantor(false);
+      setEditGuarantorError("");
+      toast.success("Guarantor name updated successfully!");
+    } catch (error) {
+      console.error("Error updating guarantor name:", error);
+      setEditGuarantorError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update guarantor name"
+      );
+    }
+  };
+
+  const handleCancelGuarantorEdit = () => {
+    setIsEditingGuarantor(false);
+    setEditGuarantorValue("");
+    setEditGuarantorError("");
+  };
+
+  // Phone editing functions
+  const handleEditPhone = () => {
+    setIsEditingPhone(true);
+    setEditPhoneValue(borrower?.phone || "");
+    setEditPhoneError("");
+  };
+
+  const handleSavePhone = async () => {
+    if (!editPhoneValue.trim()) {
+      setEditPhoneError("Phone number cannot be empty");
+      return;
+    }
+
+    // Basic phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(editPhoneValue.trim())) {
+      setEditPhoneError("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/borrowers/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          phone: editPhoneValue.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update phone number");
+      }
+
+      const updatedBorrower = await res.json();
+      setBorrower(updatedBorrower);
+      setIsEditingPhone(false);
+      setEditPhoneError("");
+      toast.success("Phone number updated successfully!");
+    } catch (error) {
+      console.error("Error updating phone number:", error);
+      setEditPhoneError(
+        error instanceof Error ? error.message : "Failed to update phone number"
+      );
+    }
+  };
+
+  const handleCancelPhoneEdit = () => {
+    setIsEditingPhone(false);
+    setEditPhoneValue("");
+    setEditPhoneError("");
+  };
+
+  // Address editing functions
+  const handleEditAddress = () => {
+    setIsEditingAddress(true);
+    setEditAddressValue(borrower?.address || "");
+    setEditAddressError("");
+  };
+
+  const handleSaveAddress = async () => {
+    if (!editAddressValue.trim()) {
+      setEditAddressError("Address cannot be empty");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/borrowers/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          address: editAddressValue.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update address");
+      }
+
+      const updatedBorrower = await res.json();
+      setBorrower(updatedBorrower);
+      setIsEditingAddress(false);
+      setEditAddressError("");
+      toast.success("Address updated successfully!");
+    } catch (error) {
+      console.error("Error updating address:", error);
+      setEditAddressError(
+        error instanceof Error ? error.message : "Failed to update address"
+      );
+    }
+  };
+
+  const handleCancelAddressEdit = () => {
+    setIsEditingAddress(false);
+    setEditAddressValue("");
+    setEditAddressError("");
+  };
+
+  // PAN ID editing functions
+  const handleEditPanId = () => {
+    setIsEditingPanId(true);
+    setEditPanIdValue(borrower?.panId || "");
+    setEditPanIdError("");
+  };
+
+  const handleSavePanId = async () => {
+    if (!editPanIdValue.trim()) {
+      setEditPanIdError("PAN ID cannot be empty");
+      return;
+    }
+
+    // Basic PAN validation
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panRegex.test(editPanIdValue.trim().toUpperCase())) {
+      setEditPanIdError("Please enter a valid PAN ID (format: ABCDE1234F)");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/borrowers/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          panId: editPanIdValue.trim().toUpperCase(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update PAN ID");
+      }
+
+      const updatedBorrower = await res.json();
+      setBorrower(updatedBorrower);
+      setIsEditingPanId(false);
+      setEditPanIdError("");
+      toast.success("PAN ID updated successfully!");
+    } catch (error) {
+      console.error("Error updating PAN ID:", error);
+      setEditPanIdError(
+        error instanceof Error ? error.message : "Failed to update PAN ID"
+      );
+    }
+  };
+
+  const handleCancelPanIdEdit = () => {
+    setIsEditingPanId(false);
+    setEditPanIdValue("");
+    setEditPanIdError("");
+  };
+
   // Sort loans by start date (most recent first)
   const sortedLoans = borrower?.loans || [];
 
@@ -971,21 +1203,152 @@ export default function BorrowerDetailsPage() {
                     <p className="text-sm text-gray-500">
                       Guarantor&apos;s Name
                     </p>
-                    <p className="text-base font-medium text-gray-900">
-                      {borrower.guarantorName}
-                    </p>
+                    {isEditingGuarantor ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="text"
+                            value={editGuarantorValue}
+                            onChange={(e) =>
+                              setEditGuarantorValue(e.target.value)
+                            }
+                            className="text-base font-medium text-gray-900 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter guarantor name"
+                            autoFocus
+                          />
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={handleSaveGuarantor}
+                              className="flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelGuarantorEdit}
+                              className="flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                        {editGuarantorError && (
+                          <p className="text-sm text-red-600">
+                            {editGuarantorError}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <p className="text-base font-medium text-gray-900">
+                          {borrower.guarantorName}
+                        </p>
+                        <button
+                          onClick={handleEditGuarantor}
+                          className="flex items-center rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                          title="Edit guarantor name"
+                        >
+                          <PencilIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {borrower.phone}
-                    </p>
+                    {isEditingPhone ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="text"
+                            value={editPhoneValue}
+                            onChange={(e) => setEditPhoneValue(e.target.value)}
+                            className="text-base font-medium text-gray-900 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter phone number"
+                            autoFocus
+                          />
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={handleSavePhone}
+                              className="flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelPhoneEdit}
+                              className="flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                        {editPhoneError && (
+                          <p className="text-sm text-red-600">
+                            {editPhoneError}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <p className="text-base font-medium text-gray-900">
+                          {borrower.phone}
+                        </p>
+                        <button
+                          onClick={handleEditPhone}
+                          className="flex items-center rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                          title="Edit phone number"
+                        >
+                          <PencilIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">PAN ID</p>
-                    <p className="text-base font-medium text-gray-900">
-                      {borrower.panId}
-                    </p>
+                    {isEditingPanId ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="text"
+                            value={editPanIdValue}
+                            onChange={(e) => setEditPanIdValue(e.target.value)}
+                            className="text-base font-medium text-gray-900 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter PAN ID"
+                            autoFocus
+                          />
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={handleSavePanId}
+                              className="flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelPanIdEdit}
+                              className="flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                        {editPanIdError && (
+                          <p className="text-sm text-red-600">
+                            {editPanIdError}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <p className="text-base font-medium text-gray-900">
+                          {borrower.panId}
+                        </p>
+                        <button
+                          onClick={handleEditPanId}
+                          className="flex items-center rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                          title="Edit PAN ID"
+                        >
+                          <PencilIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -993,7 +1356,50 @@ export default function BorrowerDetailsPage() {
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
                   Address
                 </h3>
-                <p className="text-base text-gray-900">{borrower.address}</p>
+                {isEditingAddress ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="text"
+                        value={editAddressValue}
+                        onChange={(e) => setEditAddressValue(e.target.value)}
+                        className="text-base text-gray-900 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="Enter address"
+                        autoFocus
+                      />
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={handleSaveAddress}
+                          className="flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-500"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelAddressEdit}
+                          className="flex items-center rounded-md bg-gray-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-500"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    {editAddressError && (
+                      <p className="text-sm text-red-600">{editAddressError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <p className="text-base text-gray-900">
+                      {borrower.address}
+                    </p>
+                    <button
+                      onClick={handleEditAddress}
+                      className="flex items-center rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                      title="Edit address"
+                    >
+                      <PencilIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="rounded-lg border border-gray-200 p-4">
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
@@ -1420,7 +1826,7 @@ export default function BorrowerDetailsPage() {
                     </label>
                     <div className="mt-1">
                       <Input
-                        type="number"
+                        type="string"
                         id="principalAmount"
                         name="principalAmount"
                         value={formData.principalAmount}
@@ -1440,7 +1846,7 @@ export default function BorrowerDetailsPage() {
                     </label>
                     <div className="mt-1">
                       <Input
-                        type="number"
+                        type="string"
                         id="interestRate"
                         name="interestRate"
                         value={formData.interestRate}
@@ -1499,7 +1905,7 @@ export default function BorrowerDetailsPage() {
                     </label>
                     <div className="mt-1">
                       <Input
-                        type="number"
+                        type="string"
                         id="loanDurationMonths"
                         name="loanDurationMonths"
                         value={formData.loanDurationMonths}
@@ -2180,7 +2586,7 @@ export default function BorrowerDetailsPage() {
                             </label>
                             <div className="mt-1">
                               <Input
-                                type="number"
+                                type="string"
                                 id="amount"
                                 value={settlementDialog.manualSettlement.amount}
                                 onChange={(e) =>
@@ -2206,7 +2612,7 @@ export default function BorrowerDetailsPage() {
                             </label>
                             <div className="mt-1">
                               <Input
-                                type="number"
+                                type="string"
                                 id="extraMoney"
                                 value={
                                   settlementDialog.manualSettlement.extraMoney
@@ -2234,7 +2640,7 @@ export default function BorrowerDetailsPage() {
                             </label>
                             <div className="mt-1">
                               <Input
-                                type="number"
+                                type="string"
                                 id="penalty"
                                 value={
                                   settlementDialog.manualSettlement.penalty
@@ -2262,7 +2668,7 @@ export default function BorrowerDetailsPage() {
                             </label>
                             <div className="mt-1">
                               <Input
-                                type="number"
+                                type="string"
                                 id="interest"
                                 value={
                                   settlementDialog.manualSettlement.interest
