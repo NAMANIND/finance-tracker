@@ -105,6 +105,7 @@ export default function TransactionsPage() {
   const [formError, setFormError] = useState("");
   const [activeTab, setActiveTab] = useState("expense");
   const [useInstallmentDueDate, setUseInstallmentDueDate] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -294,14 +295,17 @@ export default function TransactionsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    setIsSubmitting(true);
 
     if (!formData.type) {
       setFormError("Transaction type is required");
+      setIsSubmitting(false);
       return;
     }
 
     if (!formData.category && formData.type !== TransactionType.INSTALLMENT) {
       setFormError("Category is required for non-installment transactions");
+      setIsSubmitting(false);
       return;
     }
 
@@ -313,6 +317,7 @@ export default function TransactionsPage() {
       setFormError(
         "Cannot create installment transaction from expense tab. Please use the Borrower Payment tab."
       );
+      setIsSubmitting(false);
       return;
     }
 
@@ -323,6 +328,7 @@ export default function TransactionsPage() {
       setFormError(
         "Borrower Payment tab can only create installment transactions."
       );
+      setIsSubmitting(false);
       return;
     }
 
@@ -330,21 +336,25 @@ export default function TransactionsPage() {
     if (formData.type === TransactionType.INSTALLMENT) {
       if (!formData.borrowerId) {
         setFormError("Borrower selection is required");
+        setIsSubmitting(false);
         return;
       }
     }
     if (formData.amount < 0) {
       setFormError("Amount must be greater than 0");
+      setIsSubmitting(false);
       return;
     }
 
     if (formData.type === TransactionType.INSTALLMENT) {
       if (!formData.loanId) {
         setFormError("Loan ID is required for installment payments");
+        setIsSubmitting(false);
         return;
       }
       if (!formData.installmentId) {
         setFormError("Installment ID is required for installment payments");
+        setIsSubmitting(false);
         return;
       }
     }
@@ -437,6 +447,8 @@ export default function TransactionsPage() {
         error instanceof Error ? error.message : "Failed to add transaction";
       setFormError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -561,6 +573,7 @@ export default function TransactionsPage() {
                   setSelectedBorrowerInstallments([]);
                   setBorrowerSearch("");
                   setFormError("");
+                  setIsSubmitting(false);
                 }}
                 value="expense"
               >
@@ -591,6 +604,7 @@ export default function TransactionsPage() {
                   setSelectedBorrowerInstallments([]);
                   setBorrowerSearch("");
                   setFormError("");
+                  setIsSubmitting(false);
                 }}
                 value="borrower"
               >
@@ -723,9 +737,10 @@ export default function TransactionsPage() {
 
                 <Button
                   type="submit"
-                  className="w-full flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Transaction
+                  {isSubmitting ? "Adding Transaction..." : "Add Transaction"}
                 </Button>
               </form>
             </TabsContent>
@@ -1212,9 +1227,10 @@ export default function TransactionsPage() {
 
                 <Button
                   type="submit"
-                  className="w-full flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Payment
+                  {isSubmitting ? "Adding Payment..." : "Add Payment"}
                 </Button>
               </form>
             </TabsContent>
