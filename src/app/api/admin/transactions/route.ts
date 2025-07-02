@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     // If this is a payment and has an installment, update the installment status
     if (type === TransactionType.INSTALLMENT && installmentId) {
-      await prisma.installment.update({
+      const installment = await prisma.installment.update({
         where: { id: installmentId },
         data: {
           status: "PAID",
@@ -103,6 +103,22 @@ export async function POST(req: NextRequest) {
           paidAt: installmentDate ? new Date(installmentDate) : new Date(),
         },
       });
+
+      if (amount === 0) {
+        // check if the loan is monthly or weekly
+        const loan = await prisma.loan.findUnique({
+          where: { id: installment.loanId },
+        });
+        if (loan?.frequency === "MONTHLY") {
+          // update the transaction amount
+          await prisma.transaction.update({
+            where: { id: transaction.id },
+            data: {
+              amount: installment.interest + installment.extraAmount,
+            },
+          });
+        }
+      }
     }
 
     return NextResponse.json(transaction);
