@@ -90,12 +90,12 @@ export default function AgentReportsPage() {
       if (viewMode === "custom" && dateRange) {
         url += `?startDate=${dateRange.from}&endDate=${dateRange.to}`;
       } else if (viewMode !== "custom") {
-        const dateRange = getDateRangeForViewMode(viewMode);
-        if (dateRange) {
+        const currentDateRange = getDateRangeForViewMode(viewMode);
+        if (currentDateRange) {
           url += `?startDate=${format(
-            dateRange.from,
+            currentDateRange.from,
             "yyyy-MM-dd"
-          )}&endDate=${format(dateRange.to, "yyyy-MM-dd")}`;
+          )}&endDate=${format(currentDateRange.to, "yyyy-MM-dd")}`;
         }
       }
 
@@ -109,6 +109,7 @@ export default function AgentReportsPage() {
     }
   }, [viewMode, dateRange]);
 
+  // Handle date range updates when view mode changes (non-custom modes)
   useEffect(() => {
     if (viewMode !== "custom") {
       const range = getDateRangeForViewMode(viewMode);
@@ -116,16 +117,16 @@ export default function AgentReportsPage() {
         setDateRange(range);
         setCustomStartDate(format(range.from, "yyyy-MM-dd"));
         setCustomEndDate(format(range.to, "yyyy-MM-dd"));
-        fetchAgents();
       }
     }
-  }, [viewMode, fetchAgents]);
-
-  useEffect(() => {
-    if (viewMode !== "custom") {
-      // fetchAgents();
-    }
   }, [viewMode]);
+
+  // Fetch agents when date range changes or initially
+  useEffect(() => {
+    if (dateRange || viewMode !== "custom") {
+      fetchAgents();
+    }
+  }, [fetchAgents]);
 
   const handleAgentSelect = (agent: Agent) => {
     setSelectedAgent(agent);
