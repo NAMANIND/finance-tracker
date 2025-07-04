@@ -66,6 +66,9 @@ export async function GET(req: NextRequest) {
                               gte: dateFilter.startDate,
                               lte: dateFilter.endDate,
                             },
+                            status: {
+                              in: ["PENDING", "OVERDUE", "SKIPPED"],
+                            },
                           },
                           {
                             paidAt: {
@@ -86,6 +89,9 @@ export async function GET(req: NextRequest) {
                   orderBy: [
                     {
                       status: "asc", // This will order OVERDUE first, then PENDING, then PAID
+                    },
+                    {
+                      paidAt: "asc", // Secondary sort by due date
                     },
                     {
                       dueDate: "asc", // Secondary sort by due date
