@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { startOfDay, endOfDay, parse } from "date-fns";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,6 +10,39 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+
+    // Create start of today in IST (UTC+5:30)
+    const startMainDate = new Date(startDate || new Date());
+    // Convert to IST by adding 5 hours and 30 minutes
+    startMainDate.setUTCHours(
+      startMainDate.getUTCHours() + 5,
+      startMainDate.getUTCMinutes() + 30,
+      0,
+      0
+    );
+    // Set to start of day
+    startMainDate.setUTCHours(0, 0, 0, 0);
+
+    // Create end of today in IST (UTC+5:30)
+    const endMainDate = new Date(endDate || new Date());
+    // Convert to IST by adding 5 hours and 30 minutes
+    endMainDate.setUTCHours(
+      endMainDate.getUTCHours() + 5,
+      endMainDate.getUTCMinutes() + 30,
+      0,
+      0
+    );
+    // Set to end of day
+    endMainDate.setUTCHours(23, 59, 59, 999);
+    // endMainDate.setDate(endMainDate.getDate() + 1);
+
+    const dateFilter =
+      startDate && endDate
+        ? {
+            startDate: startMainDate,
+            endDate: endMainDate,
+          }
+        : null;
 
     const agents = await prisma.agent.findMany({
       include: {
@@ -26,33 +58,19 @@ export async function GET(req: NextRequest) {
             loans: {
               include: {
                 installments: {
-                  where:
-                    startDate && endDate
-                      ? {
-                          OR: [
-                            {
-                              dueDate: {
-                                gte: startOfDay(
-                                  parse(startDate, "yyyy-MM-dd", new Date())
-                                ),
-                                lte: endOfDay(
-                                  parse(endDate, "yyyy-MM-dd", new Date())
-                                ),
-                              },
+                  where: dateFilter
+                    ? {
+                        OR: [
+                          {
+                            // Installments paid within the date range
+                            paidAt: {
+                              gte: dateFilter.startDate,
+                              lte: dateFilter.endDate,
                             },
-                            {
-                              paidAt: {
-                                gte: startOfDay(
-                                  parse(startDate, "yyyy-MM-dd", new Date())
-                                ),
-                                lte: endOfDay(
-                                  parse(endDate, "yyyy-MM-dd", new Date())
-                                ),
-                              },
-                            },
-                          ],
-                        }
-                      : undefined,
+                          },
+                        ],
+                      }
+                    : undefined,
                   include: {
                     loan: {
                       include: {

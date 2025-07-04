@@ -116,6 +116,7 @@ export default function BorrowerDetailsPage() {
     loanId: string | null;
     pendingAmount: number;
     pendingInstallments: number;
+    pendingInterest: number;
     checkedItems: {
       pendingInstallments: boolean;
       differenceInAmounts: boolean;
@@ -134,12 +135,13 @@ export default function BorrowerDetailsPage() {
     loanId: null,
     pendingAmount: 0,
     pendingInstallments: 0,
+    pendingInterest: 0,
     checkedItems: {
       pendingInstallments: false,
       differenceInAmounts: false,
       penalties: false,
     },
-    settlementType: "automatic",
+    settlementType: "manual",
     settlementDate: new Date().toISOString().split("T")[0],
     manualSettlement: {
       amount: "",
@@ -458,18 +460,23 @@ export default function BorrowerDetailsPage() {
       (sum, inst) => sum + inst.amount + inst.extraAmount + inst.penaltyAmount,
       0
     );
+    const pendingInterest = pendingInstallments.reduce(
+      (sum, inst) => sum + inst.interest,
+      0
+    );
 
     setSettlementDialog({
       isOpen: true,
       loanId,
       pendingAmount,
       pendingInstallments: pendingInstallments.length,
+      pendingInterest,
       checkedItems: {
         pendingInstallments: false,
         differenceInAmounts: false,
         penalties: false,
       },
-      settlementType: "automatic",
+      settlementType: "manual",
       settlementDate: new Date().toISOString().split("T")[0],
       manualSettlement: {
         amount: "",
@@ -584,13 +591,14 @@ export default function BorrowerDetailsPage() {
         isOpen: false,
         loanId: null,
         pendingAmount: 0,
+        pendingInterest: 0,
         pendingInstallments: 0,
         checkedItems: {
           pendingInstallments: false,
           differenceInAmounts: false,
           penalties: false,
         },
-        settlementType: "automatic",
+        settlementType: "manual",
         settlementDate: new Date().toISOString().split("T")[0],
         manualSettlement: {
           amount: "",
@@ -623,7 +631,7 @@ export default function BorrowerDetailsPage() {
           },
           body: JSON.stringify({
             settlementType: "MANUAL",
-            markPendingAsPaid: true,
+            markPendingAsPaid: false,
             extraAmount:
               parseFloat(settlementDialog.manualSettlement.extraMoney) || 0,
             penaltyAmount:
@@ -658,12 +666,13 @@ export default function BorrowerDetailsPage() {
         loanId: null,
         pendingAmount: 0,
         pendingInstallments: 0,
+        pendingInterest: 0,
         checkedItems: {
           pendingInstallments: false,
           differenceInAmounts: false,
           penalties: false,
         },
-        settlementType: "automatic",
+        settlementType: "manual",
         settlementDate: new Date().toISOString().split("T")[0],
         manualSettlement: {
           amount: "",
@@ -2104,12 +2113,13 @@ export default function BorrowerDetailsPage() {
               loanId: null,
               pendingAmount: 0,
               pendingInstallments: 0,
+              pendingInterest: 0,
               checkedItems: {
                 pendingInstallments: false,
                 differenceInAmounts: false,
                 penalties: false,
               },
-              settlementType: "automatic",
+              settlementType: "manual",
               settlementDate: new Date().toISOString().split("T")[0],
               manualSettlement: {
                 amount: "",
@@ -2129,7 +2139,7 @@ export default function BorrowerDetailsPage() {
                 <div className="space-y-4">
                   <div className="border-b border-gray-200">
                     <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                      <button
+                      {/* <button
                         onClick={() =>
                           setSettlementDialog((prev) => ({
                             ...prev,
@@ -2143,7 +2153,7 @@ export default function BorrowerDetailsPage() {
                         }`}
                       >
                         Systematic Settlement
-                      </button>
+                      </button> */}
                       <button
                         onClick={() =>
                           setSettlementDialog((prev) => ({
@@ -2519,12 +2529,13 @@ export default function BorrowerDetailsPage() {
                                   loanId: null,
                                   pendingAmount: 0,
                                   pendingInstallments: 0,
+                                  pendingInterest: 0,
                                   checkedItems: {
                                     pendingInstallments: false,
                                     differenceInAmounts: false,
                                     penalties: false,
                                   },
-                                  settlementType: "automatic",
+                                  settlementType: "manual",
                                   settlementDate: new Date()
                                     .toISOString()
                                     .split("T")[0],
@@ -2747,6 +2758,12 @@ export default function BorrowerDetailsPage() {
                                     )}
                                     )
                                   </p>
+                                  <p className="mt-1 text-sm text-red-600">
+                                    Total Interest value:{" "}
+                                    {formatCurrency(
+                                      settlementDialog.pendingInterest
+                                    )}
+                                  </p>
                                 </div>
                               )}
                               {amountToBeCollected > 0 && (
@@ -2783,13 +2800,14 @@ export default function BorrowerDetailsPage() {
                               isOpen: false,
                               loanId: null,
                               pendingAmount: 0,
+                              pendingInterest: 0,
                               pendingInstallments: 0,
                               checkedItems: {
                                 pendingInstallments: false,
                                 differenceInAmounts: false,
                                 penalties: false,
                               },
-                              settlementType: "automatic",
+                              settlementType: "manual",
                               settlementDate: new Date()
                                 .toISOString()
                                 .split("T")[0],

@@ -21,6 +21,7 @@ import { ChevronDown, Users, Wallet, AlertCircle, Clock } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgentReportsSkeleton } from "@/components/dashboard/AgentReportsSkeleton";
+import { Button } from "@/components/ui/button";
 
 interface Installment {
   id: string;
@@ -96,7 +97,7 @@ export default function AgentReportsPage() {
 
   useEffect(() => {
     if (viewMode !== "custom") {
-      fetchAgents();
+      // fetchAgents();
     }
   }, [viewMode]);
 
@@ -104,8 +105,8 @@ export default function AgentReportsPage() {
     try {
       let url = "/api/admin/agents/reports";
 
-      if (viewMode === "custom" && customStartDate && customEndDate) {
-        url += `?startDate=${customStartDate}&endDate=${customEndDate}`;
+      if (viewMode === "custom" && dateRange) {
+        url += `?startDate=${dateRange.from}&endDate=${dateRange.to}`;
       } else if (viewMode !== "custom") {
         const dateRange = getDateRangeForViewMode(viewMode);
         if (dateRange) {
@@ -219,6 +220,7 @@ export default function AgentReportsPage() {
 
           {viewMode === "custom" && (
             <div className="flex items-center gap-2">
+              <label>Start Date</label>
               <Input
                 type="date"
                 value={customStartDate}
@@ -230,11 +232,11 @@ export default function AgentReportsPage() {
                       to: parse(customEndDate, "yyyy-MM-dd", new Date()),
                     };
                     setDateRange(newDateRange);
-                    fetchAgents();
                   }
                 }}
                 className="w-[140px]"
               />
+              <label>End Date</label>
               <Input
                 type="date"
                 value={customEndDate}
@@ -246,13 +248,14 @@ export default function AgentReportsPage() {
                       to: parse(e.target.value, "yyyy-MM-dd", new Date()),
                     };
                     setDateRange(newDateRange);
-                    fetchAgents();
                   }
                 }}
                 className="w-[140px]"
               />
             </div>
           )}
+
+          <Button onClick={() => fetchAgents()}>Load Data</Button>
         </div>
         {dateRange && (
           <div className="text-sm text-gray-500">

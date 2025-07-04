@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
   Trash2,
@@ -157,7 +157,7 @@ export default function TransactionOperationsPage() {
     } else {
       fetchTransactions(1, debouncedSearchTerm);
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, searchTerm, pagination.currentPage]);
 
   const fetchTransactions = async (page: number = 1, search: string = "") => {
     try {

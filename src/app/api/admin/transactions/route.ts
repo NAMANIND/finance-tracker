@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { TransactionType, TransactionCategory } from "@prisma/client";
+import { TransactionType, TransactionCategory, Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -144,10 +144,14 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build the where clause
-    const where: any = {};
+    const where: Prisma.TransactionWhereInput = {};
 
-    if (loanId) where.loanId = loanId;
-    if (type) where.type = type;
+    if (loanId) {
+      where.installment = {
+        loanId: loanId,
+      };
+    }
+    if (type) where.type = type as TransactionType;
 
     // Add search functionality - only search by name
     if (search && search.trim()) {

@@ -62,7 +62,7 @@ export async function POST(
             prisma.installment.update({
               where: { id: installment.id },
               data: {
-                status: "PAID",
+                status: "SKIPPED",
                 paidAt: settlementDate ? new Date(settlementDate) : new Date(),
               },
             }),
