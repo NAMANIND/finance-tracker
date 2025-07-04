@@ -136,13 +136,31 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const loanId = searchParams.get("loanId");
     const type = searchParams.get("type");
+    const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
 
     // Build the where clause
-    const where: Record<string, string | null> = {};
+    const where: any = {};
 
     if (loanId) where.loanId = loanId;
     if (type) where.type = type;
 
+    // Add search functionality - only search by name
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      where.name = { contains: searchTerm, mode: "insensitive" };
+    }
+
+    // Get total count for pagination
+    const totalCount = await prisma.transaction.count({
+      where,
+    });
+
+    // Get transactions with pagination
     const transactions = await prisma.transaction.findMany({
       where,
       include: {
@@ -151,9 +169,26 @@ export async function GET(req: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      skip: offset,
+      take: limit,
     });
 
-    return NextResponse.json(transactions);
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return NextResponse.json({
+      transactions,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPreviousPage,
+        limit,
+      },
+    });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return NextResponse.json(

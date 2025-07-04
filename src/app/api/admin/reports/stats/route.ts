@@ -98,6 +98,14 @@ export async function GET(req: NextRequest) {
     const openingBalance =
       totalIncomeExcludingToday - totalExpensesExcludingToday;
 
+    const amountCollected =
+      transactionsForCalculations
+        .filter((t) => t.type === "INSTALLMENT")
+        .reduce((sum, t) => sum + t.amount, 0) +
+      transactionsForCalculations
+        .filter((t) => t.type === "INSTALLMENT")
+        .reduce((sum, t) => sum + t.extraAmount, 0);
+
     return NextResponse.json({
       totalProfit,
       totalExpenses,
@@ -108,6 +116,7 @@ export async function GET(req: NextRequest) {
       totalCapital,
       totalLoanAmount,
       totalActiveLoansAmount,
+      amountCollected,
     });
   } catch (error) {
     console.error("Error fetching stats:", error);

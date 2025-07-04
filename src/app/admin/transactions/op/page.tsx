@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Trash2,
@@ -8,6 +8,8 @@ import {
   ArrowDownRight,
   Edit,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,20 @@ interface Transaction {
   installmentId: string | null;
 }
 
+interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  limit: number;
+}
+
+interface TransactionsResponse {
+  transactions: Transaction[];
+  pagination: Pagination;
+}
+
 interface EditFormData {
   amount: number;
   type: string;
@@ -61,8 +77,17 @@ interface EditFormData {
 
 export default function TransactionOperationsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+    limit: 10,
+  });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     transaction: Transaction | null;
@@ -110,14 +135,44 @@ export default function TransactionOperationsPage() {
     "OTHER",
   ];
 
+  // Debounce search term
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
 
-  const fetchTransactions = async () => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch transactions when page or search changes
+  useEffect(() => {
+    fetchTransactions(pagination.currentPage, debouncedSearchTerm);
+  }, [pagination.currentPage, debouncedSearchTerm]);
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) return; // Avoid unnecessary resets
+    if (pagination.currentPage !== 1) {
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    } else {
+      fetchTransactions(1, debouncedSearchTerm);
+    }
+  }, [debouncedSearchTerm]);
+
+  const fetchTransactions = async (page: number = 1, search: string = "") => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/admin/transactions", {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "10",
+      });
+
+      if (search.trim()) {
+        params.append("search", search.trim());
+      }
+
+      const response = await fetch(`/api/admin/transactions?${params}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -128,8 +183,9 @@ export default function TransactionOperationsPage() {
         throw new Error("Failed to fetch transactions");
       }
 
-      const data = await response.json();
-      setTransactions(data);
+      const data: TransactionsResponse = await response.json();
+      setTransactions(data.transactions);
+      setPagination(data.pagination);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
@@ -137,20 +193,11 @@ export default function TransactionOperationsPage() {
     }
   };
 
-  // Filter transactions based on search term
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (!searchTerm) return true;
-
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      transaction.name?.toLowerCase().includes(searchLower) ||
-      transaction.notes?.toLowerCase().includes(searchLower) ||
-      transaction.type.toLowerCase().includes(searchLower) ||
-      transaction.category.toLowerCase().includes(searchLower) ||
-      transaction.addedBy?.toLowerCase().includes(searchLower) ||
-      transaction.amount.toString().includes(searchLower)
-    );
-  });
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, currentPage: newPage }));
+    }
+  };
 
   const handleDeleteClick = (transaction: Transaction) => {
     setDeleteDialog({ open: true, transaction });
@@ -251,10 +298,8 @@ export default function TransactionOperationsPage() {
 
       toast.success("Transaction deleted successfully");
 
-      // Remove the deleted transaction from the list
-      setTransactions((prev) =>
-        prev.filter((t) => t.id !== deleteDialog.transaction!.id)
-      );
+      // Refresh the current page
+      await fetchTransactions(pagination.currentPage, debouncedSearchTerm);
 
       setDeleteDialog({ open: false, transaction: null });
     } catch (error) {
@@ -301,7 +346,7 @@ export default function TransactionOperationsPage() {
     }
   };
 
-  if (loading) {
+  if (loading && transactions.length === 0) {
     return <TransactionsSkeleton />;
   }
 
@@ -319,7 +364,7 @@ export default function TransactionOperationsPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
-            {filteredTransactions.length} of {transactions.length} Transactions
+            {pagination.totalCount} Total Transactions
           </span>
         </div>
       </div>
@@ -335,10 +380,22 @@ export default function TransactionOperationsPage() {
             className="pl-10"
           />
         </div>
+        {searchTerm && (
+          <div className="mt-2 text-sm text-gray-500">
+            {loading
+              ? "Searching..."
+              : `Showing results for "${debouncedSearchTerm}"`}
+          </div>
+        )}
       </Card>
 
       {/* Transactions List */}
       <Card className="overflow-hidden">
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+            <div className="text-sm text-gray-500">Loading...</div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -367,7 +424,7 @@ export default function TransactionOperationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
+              {transactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -447,9 +504,82 @@ export default function TransactionOperationsPage() {
           </table>
         </div>
 
-        {filteredTransactions.length === 0 && (
+        {transactions.length === 0 && !loading && (
           <div className="text-center py-12">
-            <div className="text-gray-500">No transactions found</div>
+            <div className="text-gray-500">
+              {debouncedSearchTerm
+                ? `No transactions found for "${debouncedSearchTerm}"`
+                : "No transactions found"}
+            </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
+                {Math.min(
+                  pagination.currentPage * pagination.limit,
+                  pagination.totalCount
+                )}{" "}
+                of {pagination.totalCount} results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPreviousPage || loading}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from(
+                    { length: Math.min(5, pagination.totalPages) },
+                    (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else {
+                        const start = Math.max(1, pagination.currentPage - 2);
+                        const end = Math.min(pagination.totalPages, start + 4);
+                        pageNum = start + i;
+                        if (pageNum > end) return null;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            pageNum === pagination.currentPage
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          disabled={loading}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    }
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNextPage || loading}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </Card>

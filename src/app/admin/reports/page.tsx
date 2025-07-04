@@ -49,6 +49,7 @@ interface ReportStats {
   totalLoanAmount: number;
   totalActiveLoansAmount: number;
   transactions: Transaction[];
+  amountCollected: number;
 }
 
 interface RangeStats {
@@ -78,6 +79,7 @@ export default function ReportsPage() {
     transactions: [],
     totalLoanAmount: 0,
     totalActiveLoansAmount: 0,
+    amountCollected: 0,
   });
   const [rangeStats, setRangeStats] = useState<RangeStats>({
     profit: 0,
@@ -195,6 +197,7 @@ export default function ReportsPage() {
         totalCapital: data.totalCapital,
         totalLoanAmount: data.totalLoanAmount,
         totalActiveLoansAmount: data.totalActiveLoansAmount,
+        amountCollected: data.amountCollected,
       }));
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -726,6 +729,22 @@ export default function ReportsPage() {
                   <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
                 ) : (
                   `₹${stats.totalLoanAmount.toLocaleString()}`
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <dt className="truncate text-sm font-medium text-gray-500">
+                Amount Collected
+              </dt>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? (
+                  <div className="h-8 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  `₹${stats.amountCollected.toLocaleString()}`
                 )}
               </div>
             </CardContent>
