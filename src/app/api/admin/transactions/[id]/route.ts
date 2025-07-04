@@ -186,6 +186,7 @@ export async function PATCH(
           penaltyAmount: Number(
             updateData.penaltyAmount || existingTransaction.penaltyAmount
           ),
+          paidAt: updateData.createdAt,
         },
       });
     }

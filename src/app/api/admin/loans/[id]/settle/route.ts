@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { Installment } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
@@ -48,6 +49,8 @@ export async function POST(
       );
     }
 
+    let newInstallment: Installment | null = null;
+
     if (settlementType === "AUTOMATIC") {
       // If there are pending installments and markPendingAsPaid is true
       if (markPendingAsPaid) {
@@ -70,7 +73,7 @@ export async function POST(
         }
       } else if (amount > 0) {
         // If not marking pending as paid and there's remaining amount, create a final installment
-        await prisma.installment.create({
+        newInstallment = await prisma.installment.create({
           data: {
             loanId: loan.id,
             dueDate: new Date(),
@@ -102,7 +105,7 @@ export async function POST(
       });
 
       // make a new installment with the amount
-      await prisma.installment.create({
+      newInstallment = await prisma.installment.create({
         data: {
           loanId: loan.id,
           dueDate: new Date(),
@@ -127,7 +130,7 @@ export async function POST(
         type: "INSTALLMENT",
         category: "LOAN",
         notes: `Final settlement for ${loan.borrower.name} Loan ID: ${loan.id}`,
-        installmentId: loan.installments[loan.installments.length - 1].id,
+        installmentId: newInstallment?.id,
         name: loan.borrower.name + " -  SETTLED",
         interest: interest || 0,
         addedBy: "ADMIN",
