@@ -116,10 +116,10 @@ export async function GET(req: NextRequest) {
       dueAmount: installment.dueAmount,
       paidAt: installment.paidAt,
       createdAt: installment.createdAt,
-      borrowerName: (installment as any).loan.borrower.name,
-      borrowerPhone: (installment as any).loan.borrower.phone,
-      agentName: (installment as any).loan.borrower.agent.user.name,
-      frequency: (installment as any).loan.frequency,
+      borrowerName: installment.loan.borrower.name,
+      borrowerPhone: installment.loan.borrower.phone,
+      agentName: installment.loan.borrower.agent.user.name,
+      frequency: installment.loan.frequency,
     }));
 
     // Calculate pagination metadata

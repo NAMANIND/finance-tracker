@@ -59,10 +59,10 @@ export async function GET(
       dueAmount: installment.dueAmount,
       paidAt: installment.paidAt,
       createdAt: installment.createdAt,
-      borrowerName: (installment as any).loan.borrower.name,
-      borrowerPhone: (installment as any).loan.borrower.phone,
-      agentName: (installment as any).loan.borrower.agent.user.name,
-      frequency: (installment as any).loan.frequency,
+      borrowerName: installment.loan.borrower.name,
+      borrowerPhone: installment.loan.borrower.phone,
+      agentName: installment.loan.borrower.agent.user.name,
+      frequency: installment.loan.frequency,
     };
 
     return NextResponse.json(formattedInstallment);
@@ -112,7 +112,7 @@ export async function PATCH(
     }
 
     // Build update data object
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (amount !== undefined) updateData.amount = Number(amount);
     if (principal !== undefined) updateData.principal = Number(principal);
@@ -170,10 +170,10 @@ export async function PATCH(
       dueAmount: updatedInstallment.dueAmount,
       paidAt: updatedInstallment.paidAt,
       createdAt: updatedInstallment.createdAt,
-      borrowerName: (updatedInstallment as any).loan.borrower.name,
-      borrowerPhone: (updatedInstallment as any).loan.borrower.phone,
-      agentName: (updatedInstallment as any).loan.borrower.agent.user.name,
-      frequency: (updatedInstallment as any).loan.frequency,
+      borrowerName: updatedInstallment.loan.borrower.name,
+      borrowerPhone: updatedInstallment.loan.borrower.phone,
+      agentName: updatedInstallment.loan.borrower.agent.user.name,
+      frequency: updatedInstallment.loan.frequency,
     };
 
     return NextResponse.json(formattedInstallment);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -83,25 +83,7 @@ export default function AgentReportsPage() {
     }
   }, [searchParams, agents]);
 
-  useEffect(() => {
-    if (viewMode !== "custom") {
-      const range = getDateRangeForViewMode(viewMode);
-      if (range) {
-        setDateRange(range);
-        setCustomStartDate(format(range.from, "yyyy-MM-dd"));
-        setCustomEndDate(format(range.to, "yyyy-MM-dd"));
-        fetchAgents();
-      }
-    }
-  }, [viewMode]);
-
-  useEffect(() => {
-    if (viewMode !== "custom") {
-      // fetchAgents();
-    }
-  }, [viewMode]);
-
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       let url = "/api/admin/agents/reports";
 
@@ -125,7 +107,25 @@ export default function AgentReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [viewMode, dateRange]);
+
+  useEffect(() => {
+    if (viewMode !== "custom") {
+      const range = getDateRangeForViewMode(viewMode);
+      if (range) {
+        setDateRange(range);
+        setCustomStartDate(format(range.from, "yyyy-MM-dd"));
+        setCustomEndDate(format(range.to, "yyyy-MM-dd"));
+        fetchAgents();
+      }
+    }
+  }, [viewMode, fetchAgents]);
+
+  useEffect(() => {
+    if (viewMode !== "custom") {
+      // fetchAgents();
+    }
+  }, [viewMode]);
 
   const handleAgentSelect = (agent: Agent) => {
     setSelectedAgent(agent);

@@ -165,7 +165,7 @@ export default function ReportsPage() {
     } else {
       setShowCalendar(false);
     }
-  }, [viewMode]);
+  }, [viewMode, dateRange]);
 
   // Fetch all-time stats
   const fetchAllTimeStats = async (startDate: Date) => {
