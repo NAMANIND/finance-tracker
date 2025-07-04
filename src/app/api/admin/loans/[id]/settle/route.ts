@@ -76,7 +76,7 @@ export async function POST(
         newInstallment = await prisma.installment.create({
           data: {
             loanId: loan.id,
-            dueDate: new Date(),
+            dueDate: settlementDate ? new Date(settlementDate) : new Date(),
             amount: amount,
             principal: amount,
             interest: interest || 0,
@@ -108,7 +108,7 @@ export async function POST(
       newInstallment = await prisma.installment.create({
         data: {
           loanId: loan.id,
-          dueDate: new Date(),
+          dueDate: settlementDate ? new Date(settlementDate) : new Date(),
           amount: amount,
           principal: amount,
           interest: interest || 0,
