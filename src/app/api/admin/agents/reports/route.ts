@@ -62,7 +62,12 @@ export async function GET(req: NextRequest) {
                     ? {
                         OR: [
                           {
-                            // Installments paid within the date range
+                            dueDate: {
+                              gte: dateFilter.startDate,
+                              lte: dateFilter.endDate,
+                            },
+                          },
+                          {
                             paidAt: {
                               gte: dateFilter.startDate,
                               lte: dateFilter.endDate,
@@ -110,10 +115,9 @@ export async function GET(req: NextRequest) {
 
       // Calculate collection statistics
       const allInstallments = allLoans.flatMap((loan) => loan.installments);
-      const target = allInstallments.reduce(
-        (sum, inst) => sum + inst.amount,
-        0
-      );
+      const target = allInstallments
+        .filter((inst) => inst.status !== "SKIPPED")
+        .reduce((sum, inst) => sum + inst.amount, 0);
       const collected = allInstallments
         .filter((inst) => inst.status === "PAID")
         .reduce(

@@ -460,11 +460,13 @@ export default function AgentReportsPage() {
                               Overdue Rate
                             </span>
                             <span className="text-sm font-medium text-red-600">
-                              {(
-                                (selectedAgent.collections.overdue /
-                                  selectedAgent.collections.pending) *
-                                100
-                              ).toFixed(1)}
+                              {selectedAgent.collections.pending === 0
+                                ? "0.0"
+                                : (
+                                    (selectedAgent.collections.overdue /
+                                      selectedAgent.collections.pending) *
+                                    100
+                                  ).toFixed(1)}
                               %
                             </span>
                           </div>
@@ -532,22 +534,30 @@ export default function AgentReportsPage() {
                                     <p className="font-medium text-gray-900">
                                       {installment.borrowerName}
                                     </p>
-                                    <p className="text-sm text-gray-500">
-                                      Due date:{" "}
-                                      {formatDate(
-                                        installment.dueDate,
-                                        "dd MMM yyyy"
-                                      )}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      Paid on:{" "}
-                                      {installment.paidAt
-                                        ? formatDate(
-                                            installment.paidAt,
-                                            "dd MMM yyyy"
-                                          )
-                                        : "N/A"}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      <p
+                                        className={`text-sm ${
+                                          installment.status === "PAID"
+                                            ? "text-green-700 bg-green-200"
+                                            : "text-yellow-700 bg-yellow-200"
+                                        } p-1 px-2 rounded-md`}
+                                      >
+                                        Paid on:{" "}
+                                        {installment.paidAt
+                                          ? formatDate(
+                                              installment.paidAt,
+                                              "dd MMM yyyy"
+                                            )
+                                          : "N/A"}
+                                      </p>
+                                      <p className="text-sm text-gray-500">
+                                        Due date:{" "}
+                                        {formatDate(
+                                          installment.dueDate,
+                                          "dd MMM yyyy"
+                                        )}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
