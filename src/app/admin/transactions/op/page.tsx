@@ -151,13 +151,12 @@ export default function TransactionOperationsPage() {
 
   // Reset to page 1 when search term changes
   useEffect(() => {
-    if (debouncedSearchTerm !== searchTerm) return; // Avoid unnecessary resets
     if (pagination.currentPage !== 1) {
       setPagination((prev) => ({ ...prev, currentPage: 1 }));
     } else {
       fetchTransactions(1, debouncedSearchTerm);
     }
-  }, [debouncedSearchTerm, searchTerm, pagination.currentPage]);
+  }, [debouncedSearchTerm]);
 
   const fetchTransactions = async (page: number = 1, search: string = "") => {
     try {
@@ -374,7 +373,7 @@ export default function TransactionOperationsPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
-            placeholder="Search transactions by name, notes, type, category, amount, or added by..."
+            placeholder="Search transactions by name or type..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"

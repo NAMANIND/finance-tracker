@@ -153,10 +153,23 @@ export async function GET(req: NextRequest) {
     }
     if (type) where.type = type as TransactionType;
 
-    // Add search functionality - only search by name
+    // Add search functionality - search by name and type
     if (search && search.trim()) {
-      const searchTerm = search.trim();
-      where.name = { contains: searchTerm, mode: "insensitive" };
+      const searchTerm = search.trim().toLowerCase();
+      const orConditions: Prisma.TransactionWhereInput[] = [
+        { name: { contains: searchTerm, mode: "insensitive" } },
+      ];
+
+      // Check if search term matches any transaction type
+      const matchingTypes = Object.values(TransactionType).filter((type) =>
+        type.toLowerCase().includes(searchTerm)
+      );
+
+      if (matchingTypes.length > 0) {
+        orConditions.push({ type: { in: matchingTypes } });
+      }
+
+      where.OR = orConditions;
     }
 
     // Get total count for pagination
