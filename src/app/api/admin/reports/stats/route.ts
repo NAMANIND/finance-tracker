@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         .reduce((sum, t) => sum + t.amount, 0) +
       transactionsExcludingToday
         .filter((t) => t.type === "INSTALLMENT")
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + t.amount + t.penaltyAmount, 0);
 
     const totalExpensesExcludingToday = transactionsExcludingToday
       .filter((t) => t.type === "EXPENSE")

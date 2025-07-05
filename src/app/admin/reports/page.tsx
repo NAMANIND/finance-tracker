@@ -548,8 +548,11 @@ export default function ReportsPage() {
       ["Penalty Amount", totalPenalty],
       ["Extra Amount", totalExtra],
       ["Expenses", -totalExpenses],
-      ["Total Income", totalIncome + totalInstallmentAmount + openingBalance],
-      ["Closing Balance", closingBalance],
+      [
+        "Total Income",
+        totalIncome + totalInstallmentAmount + openingBalance + totalPenalty,
+      ],
+      ["Closing Balance", closingBalance + totalPenalty],
     ];
 
     // Add empty row before summary
