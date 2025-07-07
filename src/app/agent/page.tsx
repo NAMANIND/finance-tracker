@@ -16,6 +16,7 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 interface AgentStats {
   totalBorrowers: number;
   totalActiveLoans: number;
+  totalCollectedToday: number;
   totalCollectedThisMonth: number;
   totalProfit: number;
   totalDueAmount: number;
@@ -234,8 +235,26 @@ export default function AgentDashboard() {
       <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
         Agent Dashboard
       </h1>
-
+      {/* Total Due Count */}
       <div className="mt-6 flex flex-col sm:flex-row gap-5">
+        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
+          <dt className="truncate text-sm font-medium text-gray-500">
+            Amount Collected Today
+          </dt>
+          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            ₹{stats?.totalCollectedToday?.toLocaleString()}
+          </dd>
+        </div>
+
+        {/* Total Due Amount */}
+        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
+          <dt className="truncate text-sm font-medium text-gray-500">
+            Total Due Amount
+          </dt>
+          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            ₹{stats?.totalDueAmount?.toLocaleString()}
+          </dd>
+        </div>
         {/* Total Borrowers */}
         <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">
@@ -253,26 +272,6 @@ export default function AgentDashboard() {
           </dt>
           <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
             {stats?.totalActiveLoans}
-          </dd>
-        </div>
-
-        {/* Total Due Amount */}
-        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">
-            Total Due Amount
-          </dt>
-          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
-            ₹{stats?.totalDueAmount?.toLocaleString()}
-          </dd>
-        </div>
-
-        {/* Total Due Count */}
-        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
-          <dt className="truncate text-sm font-medium text-gray-500">
-            Total Due Count
-          </dt>
-          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
-            {stats?.totalDueCount}
           </dd>
         </div>
       </div>

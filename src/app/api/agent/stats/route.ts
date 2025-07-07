@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
         },
       },
       _sum: {
-        principal: true,
-        interest: true,
+        amount: true,
+        extraAmount: true,
       },
     });
 
@@ -191,8 +191,8 @@ export async function GET(request: NextRequest) {
       totalBorrowers,
       totalActiveLoans,
       totalCollectedToday:
-        (todayCollections._sum.principal || 0) +
-        (todayCollections._sum.interest || 0),
+        (todayCollections?._sum.amount || 0) +
+        (todayCollections?._sum.extraAmount || 0),
       totalCollectedThisMonth:
         (monthCollections._sum.principal || 0) +
         (monthCollections._sum.interest || 0),
