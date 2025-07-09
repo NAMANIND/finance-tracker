@@ -17,6 +17,7 @@ interface AgentStats {
   totalBorrowers: number;
   totalActiveLoans: number;
   totalCollectedToday: number;
+  totalPenaltyCollectedToday: number;
   totalCollectedThisMonth: number;
   totalProfit: number;
   totalDueAmount: number;
@@ -243,6 +244,15 @@ export default function AgentDashboard() {
           </dt>
           <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
             ₹{stats?.totalCollectedToday?.toLocaleString()}
+          </dd>
+        </div>
+
+        <div className="flex-1 overflow-hidden rounded-lg bg-white px-4 py-4 sm:py-5 shadow sm:p-6">
+          <dt className="truncate text-sm font-medium text-gray-500">
+            Penalty Collected Today
+          </dt>
+          <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            ₹{stats?.totalPenaltyCollectedToday?.toLocaleString()}
           </dd>
         </div>
 

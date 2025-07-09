@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         amount: true,
         extraAmount: true,
         dueAmount: true,
+        penaltyAmount: true,
       },
     });
 
@@ -191,6 +192,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       totalBorrowers,
       totalActiveLoans,
+      totalPenaltyCollectedToday: todayCollections?._sum.penaltyAmount || 0,
       totalCollectedToday:
         (todayCollections?._sum.amount || 0) +
         (todayCollections?._sum.extraAmount || 0) -
