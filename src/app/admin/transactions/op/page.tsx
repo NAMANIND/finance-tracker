@@ -132,6 +132,7 @@ export default function TransactionOperationsPage() {
     "INCOME",
     "LOAN",
     "NEUTRAL",
+    "BANK",
     "OTHER",
   ];
 
