@@ -289,7 +289,7 @@ export default function ReportsPage() {
             .filter(
               (t: Transaction) =>
                 t.type === "INSTALLMENT" &&
-                !["NEUTRAL", "BANK", "OTHERS"].includes(t.category)
+                !["NEUTRAL", "BANK", "OTHERS", "LOAN"].includes(t.category)
             )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
