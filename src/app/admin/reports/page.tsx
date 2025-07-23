@@ -271,7 +271,9 @@ export default function ReportsPage() {
             ),
         expenses: data.transactions
           .filter(
-            (t: Transaction) => t.type === "EXPENSE" && t.category !== "NEUTRAL"
+            (t: Transaction) =>
+              t.type === "EXPENSE" &&
+              !["NEUTRAL", "BANK", "OTHERS", "LOAN"].includes(t.category)
           )
           .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
         interest: data.transactions
@@ -288,8 +290,8 @@ export default function ReportsPage() {
           data.transactions
             .filter(
               (t: Transaction) =>
-                t.type === "INSTALLMENT" &&
-                !["NEUTRAL", "BANK", "OTHERS", "LOAN"].includes(t.category)
+                (t.type === "INCOME" || t.type === "CAPITAL") &&
+                t.category !== "NEUTRAL"
             )
             .reduce(
               (sum: number, t: Transaction) => sum + Math.abs(t.amount),
